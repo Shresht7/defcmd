@@ -20,6 +20,7 @@ class Cmd:
     def __init__(self, fn):
         self.fn = fn
         self.params = inspect_function_signature(fn)
+        self.description = fn.__doc__
 
     def run(self, argv=None):
         """Run the command with the provided arguments or prompt interactively if no arguments are given"""
@@ -35,7 +36,7 @@ class Cmd:
         # Otherwise, run the command with the provided arguments
 
         # Build the argument parser based on the function's parameters and parse the provided arguments
-        parser = build_parser(self.params)
+        parser = build_parser(self.params, description=self.description)
         args = parser.parse_args(argv)
 
         # Extract the parsed arguments and call the function with them

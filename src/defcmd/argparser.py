@@ -11,9 +11,9 @@ from .introspect import Parameter
 
 from typing import get_origin, get_args, Literal
 
-def build_parser(params: list[Parameter]) -> argparse.ArgumentParser:
+def build_parser(params: list[Parameter], description: str | None = None) -> argparse.ArgumentParser:
     """Build an `argparse.ArgumentParser` based on the list of `Parameter` objects extracted from a function signature"""
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=description)
 
     for param in params:
 
