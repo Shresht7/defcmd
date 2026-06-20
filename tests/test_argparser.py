@@ -22,3 +22,13 @@ def test_optional_becomes_flag_with_default():
     ns2 = parser.parse_args(["--port", "9090"])
     assert type(ns2.port) == int
     assert ns2.port == 9090
+
+def test_bool_flag_true_false():
+    def f(verbose: bool = False):
+        pass
+
+    params = inspect_function_signature(f)  
+    parser = build_parser(params)
+    assert parser.parse_args([]).verbose is False
+    assert parser.parse_args(["--verbose"]).verbose is True
+    assert parser.parse_args(["--no-verbose"]).verbose is False
