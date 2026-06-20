@@ -21,10 +21,15 @@ def build_parser(params: list[Parameter]) -> argparse.ArgumentParser:
             parser.add_argument(f"--{param.name}", action=argparse.BooleanOptionalAction, default=default)
             continue # Skip the rest of the loop since we've already handled this parameter
 
+        # Setup the common kwargs for both required and optional parameters.
+        kwargs = {}
+        if isinstance(param.annotation, type):
+            kwargs["type"] = param.annotation
+
         # For required parameters, add a positional argument. For optional parameters, add a flag with the default value.
         if param.required:
-            parser.add_argument(param.name, type=param.annotation)
+            parser.add_argument(param.name, **kwargs)
         else:
-            parser.add_argument(f"--{param.name}", type=param.annotation, default=param.default)
+            parser.add_argument(f"--{param.name}", default=param.default, **kwargs)
 
     return parser
