@@ -9,3 +9,16 @@ def test_required_str_becomes_positional_argument():
     parser = build_parser(params)
     ns = parser.parse_args(["Alice"])
     assert ns.name == "Alice"
+
+def test_optional_becomes_flag_with_default():
+    def f(port: int = 8080):
+        pass
+
+    params = inspect_function_signature(f)
+    parser = build_parser(params)
+    ns = parser.parse_args([])
+    assert ns.port == 8080
+
+    ns2 = parser.parse_args(["--port", "9090"])
+    assert type(ns2.port) == int
+    assert ns2.port == 9090

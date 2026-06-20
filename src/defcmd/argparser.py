@@ -16,5 +16,7 @@ def build_parser(params: list[Parameter]) -> argparse.ArgumentParser:
     for param in params:
         if param.required:
             parser.add_argument(param.name, type=param.annotation)
+        else:
+            parser.add_argument(f"--{param.name}", type=param.annotation, default=param.default)
 
     return parser
