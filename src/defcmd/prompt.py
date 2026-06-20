@@ -3,7 +3,11 @@ from __future__ import annotations
 from defcmd.introspect import Parameter
 from typing import get_origin, get_args, Literal
 
-def prompt_for_param(param: Parameter, input_fn=input):
+def prompt_for_param(param: Parameter, input_fn=None):
+
+     # Default to the built-in input function if no custom input function is provided
+    if input_fn is None:
+        input_fn = lambda prompt: input(prompt)
 
     # If the parameter annotation is a Literal, we can extract the allowed choices and display them to the user in the prompt
     choices = None

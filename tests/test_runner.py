@@ -12,4 +12,17 @@ def test_full_argv_runs_without_prompting(monkeypatch):
     deploy.run(["localhost", "--port", "1234", "--verbose"])
     assert calls == [("localhost", 1234, True)]
 
-# ? Figure out a way to unit test the interactive prompting wizard.
+def test_empty_argv_in_real_terminal_runs_wizard(monkeypatch):
+    calls = []
+
+    @cmd
+    def deploy(host: str, port: int = 8080, verbose: bool = False):
+        calls.append((host, port, verbose))
+
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+
+    inputs = iter(["wizardhost", "9090", "Y"])
+    monkeypatch.setattr("builtins.input", lambda *_: next(inputs))
+
+    deploy.run([])
+    assert calls == [("wizardhost", 9090, True)]
