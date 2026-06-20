@@ -9,6 +9,8 @@ from __future__ import annotations
 import argparse
 from .introspect import Parameter
 
+from typing import get_origin, get_args, Literal
+
 def build_parser(params: list[Parameter]) -> argparse.ArgumentParser:
     """Build an `argparse.ArgumentParser` based on the list of `Parameter` objects extracted from a function signature"""
     parser = argparse.ArgumentParser()
@@ -21,9 +23,14 @@ def build_parser(params: list[Parameter]) -> argparse.ArgumentParser:
             parser.add_argument(f"--{param.name}", action=argparse.BooleanOptionalAction, default=default)
             continue # Skip the rest of the loop since we've already handled this parameter
 
-        # Setup the common kwargs for both required and optional parameters.
+        # Setup the common kwargs for both required and optional parameters
         kwargs = {}
-        if isinstance(param.annotation, type):
+
+        # If the annotation is a Literal, we can use the choices argument to restrict the allowed values
+        if get_origin(param.annotation) is Literal:
+            kwargs["choices"] = list(get_args(param.annotation))
+        # If it's a regular type, we can use the type argument to automatically convert the input string to the correct type
+        elif isinstance(param.annotation, type):
             kwargs["type"] = param.annotation
 
         # For required parameters, add a positional argument. For optional parameters, add a flag with the default value.
