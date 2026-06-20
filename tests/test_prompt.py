@@ -59,3 +59,13 @@ def test_bool_invalid_input_reprompts():
     inputs = iter(["notabool", "maybe", "yes"])
     value = prompt_for_param(p, input_fn=lambda _prompt: next(inputs))
     assert value is True
+
+def test_int_invalid_then_valid():
+    def f(port: int):
+        pass
+
+    [p] = inspect_function_signature(f)
+    inputs = iter(["notanumber", "totally51", "9090"])
+    value = prompt_for_param(p, input_fn=lambda _prompt: next(inputs))
+    assert value == 9090
+    assert isinstance(value, int)

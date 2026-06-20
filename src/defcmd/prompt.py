@@ -29,5 +29,14 @@ def prompt_for_param(param: Parameter, input_fn=input):
             else:
                 print("Please enter a valid boolean value (true/false, yes/no, y/n, 1/0)")
                 continue
+
+        # For other types, we can attempt to convert the raw input to the correct type using the annotation. If it fails, we prompt again!
+        if isinstance(param.annotation, type) and param.annotation is not str:
+            try:
+                return param.annotation(raw) # Attempt to convert the raw input to the correct type using the annotation
+            except (ValueError, TypeError):
+                print(f"Please enter a valid {param.annotation.__name__}")
+                continue # If the conversion fails, we catch the exception and prompt the user again
                 
+        # If the annotation is not a type or is just a string, we can return the raw input as-is since there's no type conversion to be done
         return raw
