@@ -69,3 +69,22 @@ def test_int_invalid_then_valid():
     value = prompt_for_param(p, input_fn=lambda _prompt: next(inputs))
     assert value == 9090
     assert isinstance(value, int)
+
+def test_literal_choice_valid():
+    from typing import Literal
+    def f(env: Literal["dev", "prod"] = "dev"):
+        pass
+
+    [p] = inspect_function_signature(f)
+    value = prompt_for_param(p, input_fn=lambda _prompt: "prod")
+    assert value == "prod"
+
+def test_literal_invalid_then_valid():
+    from typing import Literal
+    def f(env: Literal["dev", "prod"] = "dev"):
+        pass
+
+    [p] = inspect_function_signature(f)
+    inputs = iter(["staging", "dev"])
+    value = prompt_for_param(p, input_fn=lambda _prompt: next(inputs))
+    assert value == "dev"
