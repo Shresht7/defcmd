@@ -170,17 +170,58 @@ Per-parameter help text (and richer parameter metadata via `Annotated`) is plann
 
 ## 🚧 Development
 
-### Syncing dependencies
+This is a [`uv`](https://docs.astral.sh/uv/) project. `uv` manages the virtual environment, dependencies, and the lockfile (`uv.lock`).
+
+### 💽 Setup
+
+Clone the repo and sync dependencies (this creates a `.venv` and installs everything needed, including dev dependencies like `pytest`):
 
 ```sh
+git clone https://github.com/Shresht7/defcmd.git
+cd defcmd
 uv sync
 ```
 
-### Testing
+### 🏗️ Project structure
+
+```
+./
+├── example/
+│   └── script.py               # Example Script
+├── src/
+│   └── defcmd/
+│       ├── __init__.py         # Package Init
+│       ├── argparser.py        # Argument Parser
+│       ├── interactive.py      # Interactive Prompting Wizard
+│       ├── introspect.py       # Function Signature Introspection
+│       ├── prompt.py           # Prompt Utilities
+│       └── runner.py           # Command Runner
+├── tests/
+│   ├── test_argparser.py
+│   ├── test_interactive.py
+│   ├── test_introspect.py
+│   ├── test_prompt.py
+│   └── test_runner.py
+├── .gitignore
+├── .python-version
+├── README.md
+├── LICENSE
+├── pyproject.toml
+└── uv.lock
+```
+
+### 🧪 Testing
 
 ```sh
-uv run pytest
+uv run pytest -v
 ```
+
+There's also `example/script.py`, a scratch file (not part of the test suite) used for manually trying out new behavior in a real terminal. Useful for anything involving interactive prompting, which automated tests can only simulate with fake input, not a real tty.
+
+```sh
+uv run python example/script.py
+```
+
 ---
 
 ## 📄 License
