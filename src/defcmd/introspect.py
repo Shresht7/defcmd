@@ -8,6 +8,10 @@ import inspect
 from dataclasses import dataclass
 from typing import Any
 
+class UnsupportedSignatureError(TypeError):
+    """Raised when a function signature cannot be represented as a command-line interface"""
+    pass
+
 @dataclass(frozen=True)
 class Parameter:
     """Represents a parameter extracted from a function signature"""
@@ -23,6 +27,15 @@ def inspect_function_signature(fn) -> list[Parameter]:
 
     signature = inspect.signature(fn)
     for name, param in signature.parameters.items():
+
+        # Check for unsupported parameter kinds (*args and **kwargs)
+        if param.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD):
+            raise UnsupportedSignatureError(
+                f"Parameter '{name}' in {fn.__name__}() is *args or **kwargs, "
+                "which defcmd does not support yet."
+            )
+ 
+        # Create a Parameter object for each parameter in the function signature and append it to the list
         params.append(
             Parameter(
                 name=name,

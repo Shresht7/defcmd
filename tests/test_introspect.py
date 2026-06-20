@@ -1,6 +1,8 @@
 import inspect
 
-from defcmd.introspect import inspect_function_signature
+import pytest
+
+from defcmd.introspect import inspect_function_signature, UnsupportedSignatureError
 
 def test_required_and_optional_parameters():
     def sample_function(a: int, b: str = "default", c: float = 3.14):
@@ -24,3 +26,16 @@ def test_required_and_optional_parameters():
     assert parameters[2].name == "c"
     assert parameters[2].required is False
     assert parameters[2].default == 3.14
+
+def test_var_positional_rejected():
+    def f(*args):
+        pass        
+    with pytest.raises(UnsupportedSignatureError):
+        inspect_function_signature(f)
+
+
+def test_var_keyword_rejected():
+    def f(**kwargs):
+        pass
+    with pytest.raises(UnsupportedSignatureError):
+        inspect_function_signature(f)
