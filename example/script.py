@@ -1,12 +1,9 @@
-from typing import Literal
 from defcmd.introspect import inspect_function_signature
-from defcmd.argparser import build_parser
+from defcmd.prompt import prompt_for_param
 
-def deploy(env: Literal["dev", "prod"] = "dev"):
+def deploy(host: str):
     pass
 
-params = inspect_function_signature(deploy)
-parser = build_parser(params)
-print(parser.parse_args([]).env)
-print(parser.parse_args(["--env", "prod"]).env)
-parser.parse_args(["--env", "staging"]) # Error
+[param] = inspect_function_signature(deploy)
+value = prompt_for_param(param)
+print(f"got: {value!r}")
