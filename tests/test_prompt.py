@@ -19,3 +19,13 @@ def test_optional_blank_input_uses_default():
     # simulate the user hitting Enter with no input
     value = prompt_for_param(param, input_fn=lambda _prompt: "")
     assert value == 8080
+
+
+def test_required_blank_reprompts_then_succeeds():
+    def f(name: str):
+        pass
+
+    [param] = inspect_function_signature(f)
+    inputs = iter(["", "", "Charlie"])
+    value = prompt_for_param(param, input_fn=lambda _prompt: next(inputs))
+    assert value == "Charlie"
