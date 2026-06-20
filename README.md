@@ -33,7 +33,17 @@ Times [1]:   # Leave blank for default value
 Excited [y/N]: y
 HELLO, ALICE!!!
 ```
+> [!TIP]
+> Use `--help` for full usage information as provided by `argparse`.
+
 Zero external dependencies. Built on `argparse` and `inspect` from the standard library.
+
+Takes inspiration from **PowerShell** (of all places!) and the [`fncmd`](https://github.com/yuhr/fncmd) crate that I stumbled across when trying something similar in Rust. 
+
+The goal is to make it **easy to write small scripts** that are **usable from the command line** without having to write a lot of boilerplate.
+
+> [!NOTE]
+> `defcmd` is **not** supposed to be a full-featured CLI framework like `click` or `typer`. It is intentionally minimal, and is designed for **small scripts** where you want to avoid boilerplate and just get the **job done**.
 
 ---
 
