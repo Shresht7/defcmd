@@ -22,7 +22,7 @@ if __name__ == "__main__":
 This will create a command-line interface that allows you to call the `greet` function with the appropriate arguments. For example:
 
 ```bash
-python greet.py --name Alice --times 3 --excited
+python greet.py Alice --times 3 --excited
 ```
 `defcmd` scripts support interactive mode as well, allowing you to call the function without providing any arguments upfront. You can simply run the script and it will prompt you for the inputs:
 
