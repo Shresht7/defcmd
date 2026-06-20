@@ -3,25 +3,26 @@
 Turn any Python function signature into a command-line script.
 
 ```python
-from defcmd import cmd
+from defcmd.runner import cmd
 
 @cmd
-def greet(name: str, times: int = 1, formal: bool = False):
-    """Greet a person a specified number of times."""
+def greet(name: str, times: int = 1, excited: bool = False):
+    """Greet a person a specified number of times, optionally with excitement."""
+    greeting = f"Hello, {name}!"
+    if excited:
+        greeting = greeting.upper() + "!!!"
     for _ in range(times):
-        if formal:
-            print(f"Hello, {name}.")
-        else:
-            print(f"Hi, {name}!")
+        print(greeting)
 
 if __name__ == "__main__":
     greet.run()
+
 ```
 
 This will create a command-line interface that allows you to call the `greet` function with the appropriate arguments. For example:
 
 ```bash
-python greet.py --name Alice --times 3 --formal
+python greet.py --name Alice --times 3 --excited
 ```
 `defcmd` scripts support interactive mode as well, allowing you to call the function without providing any arguments upfront. You can simply run the script and it will prompt you for the inputs:
 
@@ -29,8 +30,8 @@ python greet.py --name Alice --times 3 --formal
 $ python greet.py
 Name: Alice
 Times [1]:   # Leave blank for default value
-Formal [y/N]: y
-Hello, Alice.
+Excited [y/N]: y
+HELLO, ALICE!!!
 ```
 Zero external dependencies. Built on `argparse` and `inspect` from the standard library.
 
