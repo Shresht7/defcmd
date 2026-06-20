@@ -2,6 +2,9 @@
 
 Turn any Python function signature into a command-line script.
 
+> "I thought _Python_ was supposed to be ***the scripting language!*** why do I have to write 100 lines of boilerplate with `argparse` just to make a simple script?!" 
+> <br> — You, probably
+
 ```python
 from defcmd.runner import cmd
 
