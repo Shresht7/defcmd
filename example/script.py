@@ -1,9 +1,13 @@
-from defcmd.introspect import inspect_function_signature
-from defcmd.prompt import prompt_for_param
-from typing import Literal
+from defcmd.runner import cmd
 
-def deploy(env: Literal["dev", "prod"] = "dev"):
-    pass
+@cmd
+def greet(name: str, times: int = 1, excited: bool = False):
+    """Greet a person a specified number of times, optionally with excitement."""
+    greeting = f"Hello, {name}!"
+    if excited:
+        greeting = greeting.upper() + "!!!"
+    for _ in range(times):
+        print(greeting)
 
-[p] = inspect_function_signature(deploy)
-print(prompt_for_param(p))
+if __name__ == "__main__":
+    greet.run()
