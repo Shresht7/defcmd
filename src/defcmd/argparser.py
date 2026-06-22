@@ -17,14 +17,18 @@ def build_parser(params: list[Parameter], description: str | None = None) -> arg
 
     for param in params:
 
+        # Setup the common kwargs for both required and optional parameters
+        kwargs = {}
+
+        # If the parameter has a Spec with a help message, include that in the argument definition so it shows up in the --help output
+        if param.meta and param.meta.help:
+            kwargs["help"] = param.meta.help
+
         # Handle boolean parameters with a special action that creates both --flag and --no-flag options and sets the default value appropriately
         if param.annotation is bool:
             default = param.default if not param.required else False
             parser.add_argument(f"--{param.name}", action=argparse.BooleanOptionalAction, default=default)
             continue # Skip the rest of the loop since we've already handled this parameter
-
-        # Setup the common kwargs for both required and optional parameters
-        kwargs = {}
 
         # If the annotation is a Literal, we can use the choices argument to restrict the allowed values
         if get_origin(param.annotation) is Literal:
