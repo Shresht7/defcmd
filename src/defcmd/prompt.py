@@ -14,15 +14,16 @@ def prompt_for_param(param: Parameter, input_fn=None):
     if get_origin(param.annotation) is Literal:
         choices = list(get_args(param.annotation))
 
-    # Determine the annotation hint to display in the prompt based on the parameter annotation
+    # Determine the hints to display in the prompt based on the parameter annotation
     annotation_hint = f"({param.annotation.__name__})" if choices is None else f"({', '.join(choices)})"
+    help_hint = f" — {param.meta.help}" if param.meta and param.meta.help else ""
 
     # Prompt the user for input until they provide a non-blank value
     # or, if the parameter is optional, they hit Enter to accept the default value
     while True:
 
         # Use the parameter name and type annotation to create a helpful prompt message
-        raw = input_fn(f"Enter value for {param.name}{annotation_hint}: ")
+        raw = input_fn(f"Enter value for {param.name}{annotation_hint}{help_hint}: ")
 
         if raw == "":
             # If the user provided blank input, but the parameter is required, we need to prompt again
