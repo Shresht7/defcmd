@@ -1,4 +1,4 @@
-from defcmd.runner import cmd
+from defcmd import cmd
 
 @cmd
 def greet(name: str, times: int = 1, excited: bool = False):

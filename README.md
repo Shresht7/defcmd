@@ -6,7 +6,7 @@ Turn any Python function signature into a command-line script.
 > <br> — You, probably
 
 ```python
-from defcmd.runner import cmd
+from defcmd import cmd
 
 @cmd
 def greet(name: str, times: int = 1, excited: bool = False):
@@ -57,7 +57,7 @@ The goal is to make it **easy to write small scripts** that are **usable from th
 Any plain function becomes a CLI when decorated with `@cmd`:
 
 ```python
-from defcmd.runner import cmd
+from defcmd import cmd
 
 @cmd
 def greet(name: str, times: int = 1, excited: bool = False):
