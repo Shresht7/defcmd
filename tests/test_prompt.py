@@ -2,6 +2,9 @@ import pytest
 
 from defcmd.introspect import inspect_function_signature
 from defcmd.prompt import prompt_for_param
+from defcmd.spec import Spec
+
+from typing import Annotated, Literal
 
 def test_required_str_returns_typed_value():
     def f(name: str):
@@ -88,3 +91,32 @@ def test_literal_invalid_then_valid():
     inputs = iter(["staging", "dev"])
     value = prompt_for_param(p, input_fn=lambda _prompt: next(inputs))
     assert value == "dev"
+
+def test_spec_help_appears_in_prompt_label():
+    def f(host: Annotated[str, Spec(help="target hostname")]):
+        pass
+
+    [p] = inspect_function_signature(f)
+    seen_prompts = []
+
+    def capture_input(prompt):
+        seen_prompts.append(prompt)
+        return "myhost"
+
+    prompt_for_param(p, input_fn=capture_input)
+    assert "target hostname" in seen_prompts[0]
+
+
+def test_no_spec_means_no_help_hint():
+    def f(host: str):
+        pass
+
+    [p] = inspect_function_signature(f)
+    seen_prompts = []
+
+    def capture_input(prompt):
+        seen_prompts.append(prompt)
+        return "myhost"
+
+    prompt_for_param(p, input_fn=capture_input)
+    assert "—" not in seen_prompts[0]
