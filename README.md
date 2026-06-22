@@ -222,6 +222,15 @@ There's also `example/script.py`, a scratch file (not part of the test suite) us
 uv run python example/script.py
 ```
 
+### ☑️ TODO / Ideas 💡
+
+- [ ] Write proper module documentation
+- [ ] Add tests for README examples
+- [ ] Per-parameter help text in `--help`.
+- [ ] Annotated metadata for richer parameter types (e.g., min/max, regex, validate etc.).
+- [ ] Subcommands (multiple `@cmd`-decorated functions in one program).
+- [ ] Support for custom prompts
+
 ---
 
 ## 📄 License
