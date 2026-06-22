@@ -1,0 +1,11 @@
+"""
+Defines the Spec class, which represents the specification of a command, including its help text and other metadata.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class Spec:
+    help: str | None = None     # The help message to show for this parameter
