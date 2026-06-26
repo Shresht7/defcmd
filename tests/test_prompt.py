@@ -134,3 +134,29 @@ def test_spec_prompt_overrides_default_prompt():
 
     prompt_for_param(p, input_fn=capture_input)
     assert seen_prompts[0].startswith("How many hours did it take?")
+
+def test_secret_param_uses_getpass(monkeypatch):
+    def f(password: Annotated[str, Spec(secret=True)]):
+        pass
+
+    [p] = inspect_function_signature(f)
+    calls = []
+
+    monkeypatch.setattr("defcmd.prompt.getpass", lambda prompt, echo_char="*": calls.append((prompt, echo_char)) or "s3cr3t")
+
+    value = prompt_for_param(p, input_fn=lambda _: (_ for _ in ()).throw(AssertionError("input() should not be called for secret parameters")))
+
+    assert value == "s3cr3t"
+    assert calls[0][1] == "*"
+
+def test_required_secret_blank_reprompts(monkeypatch):
+    def f(password: Annotated[str, Spec(secret=True)]):
+        pass
+
+    [p] = inspect_function_signature(f)
+    inputs = iter(["", "", "s3cr3t"])
+
+    monkeypatch.setattr("defcmd.prompt.getpass", lambda *_args, **_kwargs: next(inputs))
+
+    value = prompt_for_param(p)
+    assert value == "s3cr3t"
