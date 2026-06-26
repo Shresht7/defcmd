@@ -1,5 +1,5 @@
 """
-Defines the Spec class, which represents the specification of a command, including its help text and other metadata.
+Defines the Spec class, which represents the specification of a command, including its help text and other specifications.
 """
 
 from __future__ import annotations

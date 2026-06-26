@@ -48,9 +48,9 @@ def test_non_annotated_parameter():
 
     parameters = inspect_function_signature(f)
     assert parameters[0].annotation is str
-    assert parameters[0].meta is None
+    assert parameters[0].spec is None
     assert parameters[1].annotation is int
-    assert parameters[1].meta is None
+    assert parameters[1].spec is None
 
 def test_annotated_specifications():
     def f(host: Annotated[str, Spec(help="target hostname")], port: int = 8080):
@@ -60,5 +60,5 @@ def test_annotated_specifications():
     host, port = params
 
     assert host.annotation is str  # unwrapped, not Annotated[...]
-    assert host.meta == Spec(help="target hostname")
-    assert port.meta is None
+    assert host.spec == Spec(help="target hostname")
+    assert port.spec is None

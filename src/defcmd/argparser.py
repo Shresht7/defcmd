@@ -21,8 +21,8 @@ def build_parser(params: list[Parameter], description: str | None = None) -> arg
         kwargs = {}
 
         # If the parameter has a Spec with a help message, include that in the argument definition so it shows up in the --help output
-        if param.meta and param.meta.help:
-            kwargs["help"] = param.meta.help
+        if param.spec and param.spec.help:
+            kwargs["help"] = param.spec.help
 
         # Handle boolean parameters with a special action that creates both --flag and --no-flag options and sets the default value appropriately
         if param.annotation is bool:

@@ -16,22 +16,22 @@ def prompt_for_param(param: Parameter, input_fn=None):
         choices = list(get_args(param.annotation))
 
     # Determine the prompt message to display to the user.
-    # If the parameter has a custom prompt defined in its metadata, we use that.
+    # If the parameter has a custom prompt defined in its specifications, we use that.
     # Otherwise, we construct a prompt message based on the parameter name, type annotation, and help text (if available).
     prompt = ""
-    if param.meta and param.meta.prompt:
-        prompt = param.meta.prompt
+    if param.spec and param.spec.prompt:
+        prompt = param.spec.prompt
     else:
         # Determine the hints to display in the prompt based on the parameter annotation
         annotation_hint = f"({param.annotation.__name__})" if choices is None else f"({', '.join(choices)})"
-        help_hint = f" — {param.meta.help}" if param.meta and param.meta.help else ""
+        help_hint = f" — {param.spec.help}" if param.spec and param.spec.help else ""
         prompt = f"Enter value for {param.name}{annotation_hint}{help_hint}:"
     prompt += " "  # Add a space after the prompt for better readability
 
     # TODO: Can allow substitution of hints like %help% and %choices% in the prompt string, which would be replaced with the actual help text and choices at runtime.
 
     # Determine if the parameter is a secret (e.g., a password) and should be hidden when prompting.
-    is_secret = param.meta.secret if param.meta else False
+    is_secret = param.spec.secret if param.spec else False
 
     # Prompt the user for input until they provide a non-blank value
     # or, if the parameter is optional, they hit Enter to accept the default value

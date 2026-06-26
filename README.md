@@ -158,7 +158,7 @@ positional arguments:
   host
 ```
 
-Per-parameter help text (and richer parameter metadata via `Annotated`) is planned but not yet implemented.
+Per-parameter help text (and richer parameter specifications via `Annotated`) is planned but not yet implemented.
 
 ### What's not supported (yet)
 
@@ -227,7 +227,7 @@ uv run python example/script.py
 - [ ] Write proper module documentation
 - [ ] Add tests for README examples
 - [ ] Per-parameter help text in `--help`.
-- [ ] Annotated metadata for richer parameter types (e.g., min/max, regex, validate etc.).
+- [ ] Annotated specifications for richer parameter types (e.g., min/max, regex, validate etc.).
 - [ ] Subcommands (multiple `@cmd`-decorated functions in one program).
 - [ ] Support for custom prompts
 
