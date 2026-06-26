@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Callable
 
 @dataclass(frozen=True)
 class Spec:
@@ -21,4 +22,4 @@ class Spec:
     min: int | float | None = None      # The minimum value for this parameter (if applicable)
     max: int | float | None = None      # The maximum value for this parameter (if applicable)
     pattern: str | None = None          # A regex pattern that the parameter value must match (if applicable)
-    
+    validate: Callable | None = None    # A custom validation function for this parameter (if applicable)

@@ -110,3 +110,17 @@ def test_pattern_on_positional():
     assert parser.parse_args(["10.0.0.1"]).host == "10.0.0.1"
     with pytest.raises(SystemExit):
         parser.parse_args(["invalid-host"])
+
+def test_custom_validation_function():
+    def validate_port(value):
+        if value % 2 != 0:
+            raise ValueError("port must be even")
+
+    def f(port: Annotated[int, Spec(validate=validate_port)] = 8080):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    assert parser.parse_args([]).port == 8080
+    assert parser.parse_args(["--port", "8082"]).port == 8082
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--port", "8081"])

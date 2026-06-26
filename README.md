@@ -94,7 +94,7 @@ python greet.py Alice --times 3
 
 ### Boolean flags
 
-`bool` parameters are always flags, never positionals — even if required. They support both the on and off form:
+`bool` parameters are always flags, never positionals, even if required. They support both the on and off form:
 
 ```python
 def greet(name: str, excited: bool = False):
@@ -198,15 +198,16 @@ Enter your token: ********
 
 #### Specification Options
 
-| Spec      | Description                                               | Overrides                |
-| --------- | --------------------------------------------------------- | ------------------------ |
-| `short`   | Short flag for the parameter (e.g., `-p`).                |                          |
-| `help`    | Help text for the parameter, shown in `--help`.           | The default help message |
-| `prompt`  | Custom prompt text for interactive mode.                  | The default prompt text  |
-| `secret`  | If `True`, input is hidden in interactive mode.           |                          |
-| `min`     | Minimum numeric value (inclusive).                        |                          |
-| `max`     | Maximum numeric value (inclusive).                        |                          |
-| `pattern` | A regex pattern the value must match (uses `fullmatch`).  |                          |
+| Spec       | Description                                              | Overrides                |
+| ---------- | -------------------------------------------------------- | ------------------------ |
+| `short`    | Short flag for the parameter (e.g., `-p`).               |                          |
+| `help`     | Help text for the parameter, shown in `--help`.          | The default help message |
+| `prompt`   | Custom prompt text for interactive mode.                 | The default prompt text  |
+| `secret`   | If `True`, input is hidden in interactive mode.          |                          |
+| `min`      | Minimum numeric value (inclusive).                       |                          |
+| `max`      | Maximum numeric value (inclusive).                       |                          |
+| `pattern`  | A regex pattern the value must match (uses `fullmatch`). |                          |
+| `validate` | A custom validation function for the parameter.          |                          |
 
 ### What's not supported (yet)
 
@@ -272,7 +273,6 @@ uv run python example/script.py
 ### ☑️ TODO / Ideas 💡
 
 - [ ] Write proper module documentation
-- [ ] Custom `validate` callable for arbitrary validation.
 - [ ] Subcommands (multiple `@cmd`-decorated functions in one program).
 
 ---

@@ -68,6 +68,12 @@ def validate_value(param: Parameter, value):
         if not re.fullmatch(spec.pattern, value):
             raise ValidationError(f"must match pattern '{spec.pattern}', got: {value}")
 
+    # custom validation function
+    if spec.validate is not None:
+        try:
+            spec.validate(value)
+        except Exception as e:
+            raise ValidationError(f"custom validation failed: {e}")
 
 def parse_value(param: Parameter, raw: str):
     """Convert and validate a raw string value according to the parameter's type annotation and Spec constraints"""
