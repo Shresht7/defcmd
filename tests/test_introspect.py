@@ -3,6 +3,8 @@ import inspect
 import pytest
 
 from defcmd.introspect import inspect_function_signature, UnsupportedSignatureError
+from defcmd.spec import Spec
+from typing import Annotated
 
 def test_required_and_optional_parameters():
     def sample_function(a: int, b: str = "default", c: float = 3.14):
@@ -39,3 +41,24 @@ def test_var_keyword_rejected():
         pass
     with pytest.raises(UnsupportedSignatureError):
         inspect_function_signature(f)
+
+def test_non_annotated_parameter():
+    def f(host: str, port: int):
+        pass
+
+    parameters = inspect_function_signature(f)
+    assert parameters[0].annotation is str
+    assert parameters[0].spec is None
+    assert parameters[1].annotation is int
+    assert parameters[1].spec is None
+
+def test_annotated_specifications():
+    def f(host: Annotated[str, Spec(help="target hostname")], port: int = 8080):
+        pass
+
+    params = inspect_function_signature(f)
+    host, port = params
+
+    assert host.annotation is str  # unwrapped, not Annotated[...]
+    assert host.spec == Spec(help="target hostname")
+    assert port.spec is None

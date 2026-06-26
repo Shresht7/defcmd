@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from defcmd.introspect import Parameter
 from typing import get_origin, get_args, Literal
+from getpass import getpass
 
 def prompt_for_param(param: Parameter, input_fn=None):
 
@@ -14,15 +15,35 @@ def prompt_for_param(param: Parameter, input_fn=None):
     if get_origin(param.annotation) is Literal:
         choices = list(get_args(param.annotation))
 
-    # Determine the annotation hint to display in the prompt based on the parameter annotation
-    annotation_hint = f"({param.annotation.__name__})" if choices is None else f"({', '.join(choices)})"
+    # Determine the prompt message to display to the user.
+    # If the parameter has a custom prompt defined in its specifications, we use that.
+    # Otherwise, we construct a prompt message based on the parameter name, type annotation, and help text (if available).
+    prompt = ""
+    if param.spec and param.spec.prompt:
+        prompt = param.spec.prompt
+    else:
+        # Determine the hints to display in the prompt based on the parameter annotation
+        annotation_hint = f"({param.annotation.__name__})" if choices is None else f"({', '.join(choices)})"
+        help_hint = f" — {param.spec.help}" if param.spec and param.spec.help else ""
+        prompt = f"Enter value for {param.name}{annotation_hint}{help_hint}:"
+    prompt += " "  # Add a space after the prompt for better readability
+
+    # TODO: Can allow substitution of hints like %help% and %choices% in the prompt string, which would be replaced with the actual help text and choices at runtime.
+
+    # Determine if the parameter is a secret (e.g., a password) and should be hidden when prompting.
+    is_secret = param.spec.secret if param.spec else False
 
     # Prompt the user for input until they provide a non-blank value
     # or, if the parameter is optional, they hit Enter to accept the default value
     while True:
 
-        # Use the parameter name and type annotation to create a helpful prompt message
-        raw = input_fn(f"Enter value for {param.name}{annotation_hint}: ")
+        # Prompt the user for input and read the response.
+        raw = ""
+        if is_secret:
+            raw = getpass(prompt, echo_char="*")
+        else:
+            raw = input_fn(prompt)
+        raw = raw.strip()  # Strip leading and trailing whitespace from the input
 
         if raw == "":
             # If the user provided blank input, but the parameter is required, we need to prompt again

@@ -2,8 +2,10 @@ import pytest
 
 from defcmd.introspect import inspect_function_signature
 from defcmd.argparser import build_parser
+from defcmd.spec import Spec
 
-from typing import Literal
+from typing import Annotated, Literal
+
 
 def test_required_str_becomes_positional_argument():
     def f(name: str):
@@ -47,3 +49,32 @@ def test_literal_choices_enforced():
     assert parser.parse_args(["--env", "prod"]).env == "prod"
     with pytest.raises(SystemExit):
         parser.parse_args(["--env", "staging"])
+
+def test_spec_help_appears_in_help_output(capsys):
+    def f(host: Annotated[str, Spec(help="target hostname")]):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--help"])
+    captured = capsys.readouterr()
+    assert "target hostname" in captured.out
+
+def test_spec_help_appears_for_bool_flags(capsys):
+    def f(verbose: Annotated[bool, Spec(help="enable verbose output")] = False):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--help"])
+
+    captured = capsys.readouterr()
+    assert "enable verbose output" in captured.out
+
+def test_spec_short_flag_works():
+    def f(port: Annotated[int, Spec(short="p", help="port number")] = 8080):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    ns = parser.parse_args(["-p", "9090"])
+    assert ns.port == 9090
