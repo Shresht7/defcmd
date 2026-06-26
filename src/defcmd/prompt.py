@@ -74,7 +74,6 @@ def _prompt(msg: str, is_secret=False, input_fn=None):
     # This allows for mocking the input function for unit tests.
     if input_fn is None:
         input_fn = lambda prompt: input(prompt)
-        return input_fn(msg)
 
     # If the input is secret, use getpass to hide the input;
     # otherwise, use the provided input function.

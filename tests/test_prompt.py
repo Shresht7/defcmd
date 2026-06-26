@@ -188,3 +188,32 @@ def test_pattern_reprompts():
     inputs = iter(["abc", "12345", "6789"])
     value = prompt_for_param(p, input_fn=lambda _prompt: next(inputs))
     assert value == "6789"
+
+
+def test_prompt_getpass_secret_input(monkeypatch):
+    from defcmd.prompt import _prompt
+
+    calls = []
+    monkeypatch.setattr("defcmd.prompt.getpass", lambda msg, echo_char="*": calls.append((msg, echo_char)) or "s3cr3t")
+
+    result = _prompt("password:", is_secret=True, input_fn=lambda _: "visible")
+    assert result == "s3cr3t"
+    assert calls[0][1] == "*"
+
+
+def test_prompt_visible_input(monkeypatch):
+    from defcmd.prompt import _prompt
+
+    result = _prompt("name:", is_secret=False, input_fn=lambda _: "Alice")
+    assert result == "Alice"
+
+
+def test_prompt_default_input_fn_secret(monkeypatch):
+    """_prompt falls through to getpass even when input_fn is None"""
+    from defcmd.prompt import _prompt
+
+    monkeypatch.setattr("builtins.input", lambda _: "should-not-be-used")
+    monkeypatch.setattr("defcmd.prompt.getpass", lambda msg, echo_char="*": "hidden-value")
+
+    result = _prompt("token:", is_secret=True)
+    assert result == "hidden-value"
