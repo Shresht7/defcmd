@@ -120,3 +120,17 @@ def test_no_spec_means_no_help_hint():
 
     prompt_for_param(p, input_fn=capture_input)
     assert "—" not in seen_prompts[0]
+
+def test_spec_prompt_overrides_default_prompt():
+    def f(host: Annotated[str, Spec(help="number of hours", prompt="How many hours did it take?")]):
+        pass
+
+    [p] = inspect_function_signature(f)
+    seen_prompts = []
+
+    def capture_input(prompt):
+        seen_prompts.append(prompt)
+        return "myhost"
+
+    prompt_for_param(p, input_fn=capture_input)
+    assert seen_prompts[0].startswith("How many hours did it take?")
