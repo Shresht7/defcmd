@@ -62,7 +62,11 @@ class CLI:
 
         def decorator(fn: Callable):
             cmd_name = name or fn.__name__      # Use the provided name or the function's name as the command name
-            self.commands[cmd_name] = Cmd(fn)   # Create a Cmd instance and store it in the commands dictionary
+            cmd = Cmd(fn)                       # Create a Cmd instance 
+            # Set the description if provided (otherwise, it will default to the function's docstring)
+            if description is not None:
+                cmd.description = description
+            self.commands[cmd_name] = cmd       # Store the command in the CLI's commands dictionary
             return fn
 
         if fn is not None:
