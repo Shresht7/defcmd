@@ -137,6 +137,11 @@ HELLO, ALICE!!!
 - Boolean parameters accept `y`/`n`, `yes`/`no`, `true`/`false`, or `1`/`0`.
 - `Literal` parameters list the valid choices and accept either the exact value or its number.
 
+When using the advanced `Spec` annotations:
+- Parameters with `Spec(prompt=...)` can override the default prompt text.
+- Parameters with `Spec(secret=True)` hide the input (for passwords, tokens, etc.).
+- Parameters with `Spec(help=...)` can override the default help text shown in `--help`.
+
 Interactive mode only triggers when **both** of these are true: no arguments were passed, and stdin is a real terminal (not piped or redirected). Running a script with no args in a non-interactive context (cron, CI, piped input) just errors normally instead of hanging waiting for input.
 
 ### Help text
@@ -160,10 +165,48 @@ positional arguments:
 
 Per-parameter help text (and richer parameter specifications via `Annotated`) is planned but not yet implemented.
 
+### Advanced Parameter Specification
+
+The `Spec` annotations allow you to attach additional metadata to the cli parameters:
+
+```python
+from typing import Annotated
+from defcmd import cmd
+from defcmd.spec import Spec
+
+@cmd
+def action(
+        payload: Annotated[str, Spec(help="The payload to send", prompt="Payload")],
+        token: Annotated[str, Spec(short="t", help="The authentication token", prompt="Enter your token", secret=True)],
+        host: Annotated[str, Spec(help="The host to connect to")] = "localhost",
+        port: Annotated[int, Spec(short='p', help="The port to connect to")] = 8080,
+        verbose: Annotated[bool, Spec(short='v', help="Enable verbose output")] = False
+    ):
+    # ... Your Logic Here ...
+
+if __name__ == "__main__":
+    action.run()
+```
+
+```sh
+$ python action.py -p 8080 -v
+Payload: Hello World
+Enter your token: ********
+# ... Your Logic Here ...
+```
+
+#### Specification Options
+
+| Spec     | Description                                     | Overrides                |
+| -------- | ----------------------------------------------- | ------------------------ |
+| `short`  | Short flag for the parameter (e.g., `-p`).      |                          |
+| `help`   | Help text for the parameter, shown in `--help`. | The default help message |
+| `prompt` | Custom prompt text for interactive mode.        | The default prompt text  |
+| `secret` | If `True`, input is hidden in interactive mode. |                          |
+
 ### What's not supported (yet)
 
 - `*args` and `**kwargs` in the decorated function's signature raises an error at decoration time.
-- Per-parameter help text in `--help`.
 - Subcommands (multiple `@cmd`-decorated functions in one program).
 
 ---
@@ -216,7 +259,7 @@ uv sync
 uv run pytest -v
 ```
 
-There's also `example/script.py`, a scratch file (not part of the test suite) used for manually trying out new behavior in a real terminal. Useful for anything involving interactive prompting, which automated tests can only simulate with fake input, not a real tty.
+The `example/` directory contains small manual scripts for trying behavior in a real terminal. `example/script.py` shows the basic API, while `example/advanced.py` shows `Annotated[..., Spec(...)]` metadata such as help text, custom prompts, secret input, and short flags. These examples are not part of the test suite, but they are useful for manually trying interactive behavior in a real tty.
 
 ```sh
 uv run python example/script.py
@@ -225,11 +268,8 @@ uv run python example/script.py
 ### ☑️ TODO / Ideas 💡
 
 - [ ] Write proper module documentation
-- [ ] Add tests for README examples
-- [ ] Per-parameter help text in `--help`.
 - [ ] Annotated specifications for richer parameter types (e.g., min/max, regex, validate etc.).
 - [ ] Subcommands (multiple `@cmd`-decorated functions in one program).
-- [ ] Support for custom prompts
 
 ---
 
