@@ -9,3 +9,4 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class Spec:
     help: str | None = None     # The help message to show for this parameter
+    prompt: str | None = None   # The prompt message to show when asking for this parameter

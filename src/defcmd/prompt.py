@@ -14,16 +14,27 @@ def prompt_for_param(param: Parameter, input_fn=None):
     if get_origin(param.annotation) is Literal:
         choices = list(get_args(param.annotation))
 
-    # Determine the hints to display in the prompt based on the parameter annotation
-    annotation_hint = f"({param.annotation.__name__})" if choices is None else f"({', '.join(choices)})"
-    help_hint = f" — {param.meta.help}" if param.meta and param.meta.help else ""
+    # Determine the prompt message to display to the user.
+    # If the parameter has a custom prompt defined in its metadata, we use that.
+    # Otherwise, we construct a prompt message based on the parameter name, type annotation, and help text (if available).
+    prompt = ""
+    if param.meta and param.meta.prompt:
+        prompt = param.meta.prompt
+    else:
+        # Determine the hints to display in the prompt based on the parameter annotation
+        annotation_hint = f"({param.annotation.__name__})" if choices is None else f"({', '.join(choices)})"
+        help_hint = f" — {param.meta.help}" if param.meta and param.meta.help else ""
+        prompt = f"Enter value for {param.name}{annotation_hint}{help_hint}:"
+    prompt += " "  # Add a space after the prompt for better readability
+
+    # TODO: Can allow substitution of hints like %help% and %choices% in the prompt string, which would be replaced with the actual help text and choices at runtime.
 
     # Prompt the user for input until they provide a non-blank value
     # or, if the parameter is optional, they hit Enter to accept the default value
     while True:
 
         # Use the parameter name and type annotation to create a helpful prompt message
-        raw = input_fn(f"Enter value for {param.name}{annotation_hint}{help_hint}: ")
+        raw = input_fn(prompt).strip()
 
         if raw == "":
             # If the user provided blank input, but the parameter is required, we need to prompt again
