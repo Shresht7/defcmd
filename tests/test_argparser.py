@@ -70,3 +70,11 @@ def test_spec_help_appears_for_bool_flags(capsys):
 
     captured = capsys.readouterr()
     assert "enable verbose output" in captured.out
+
+def test_spec_short_flag_works():
+    def f(port: Annotated[int, Spec(short="p", help="port number")] = 8080):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    ns = parser.parse_args(["-p", "9090"])
+    assert ns.port == 9090

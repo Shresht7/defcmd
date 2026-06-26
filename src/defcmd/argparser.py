@@ -17,6 +17,11 @@ def build_parser(params: list[Parameter], description: str | None = None) -> arg
 
     for param in params:
 
+        names = []
+        if param.spec and param.spec.short:
+            names.append(f"-{param.spec.short}")
+        names.append(f"--{param.name}")
+
         # Setup the common kwargs for both required and optional parameters
         kwargs = {}
 
@@ -27,7 +32,7 @@ def build_parser(params: list[Parameter], description: str | None = None) -> arg
         # Handle boolean parameters with a special action that creates both --flag and --no-flag options and sets the default value appropriately
         if param.annotation is bool:
             default = param.default if not param.required else False
-            parser.add_argument(f"--{param.name}", action=argparse.BooleanOptionalAction, default=default, **kwargs)
+            parser.add_argument(*names, action=argparse.BooleanOptionalAction, default=default, **kwargs)
             continue # Skip the rest of the loop since we've already handled this parameter
 
         # If the annotation is a Literal, we can use the choices argument to restrict the allowed values
@@ -41,6 +46,6 @@ def build_parser(params: list[Parameter], description: str | None = None) -> arg
         if param.required:
             parser.add_argument(param.name, **kwargs)
         else:
-            parser.add_argument(f"--{param.name}", default=param.default, **kwargs)
+            parser.add_argument(*names, default=param.default, **kwargs)
 
     return parser
