@@ -9,6 +9,8 @@ from __future__ import annotations
 import argparse
 from .introspect import Parameter
 
+from defcmd.convert import ValidationError, parse_value
+
 from typing import get_origin, get_args, Literal
 
 def build_parser(params: list[Parameter], description: str | None = None) -> argparse.ArgumentParser:
@@ -35,12 +37,13 @@ def build_parser(params: list[Parameter], description: str | None = None) -> arg
             parser.add_argument(*names, action=argparse.BooleanOptionalAction, default=default, **kwargs)
             continue # Skip the rest of the loop since we've already handled this parameter
 
-        # If the annotation is a Literal, we can use the choices argument to restrict the allowed values
-        if get_origin(param.annotation) is Literal:
+        # For other types, use the type converter function to handle conversion and validation
+        kwargs["type"] = _make_type_converter(param)
+
+        # Choices for Literal types
+        origin = get_origin(param.annotation)
+        if origin is Literal:
             kwargs["choices"] = list(get_args(param.annotation))
-        # If it's a regular type, we can use the type argument to automatically convert the input string to the correct type
-        elif isinstance(param.annotation, type):
-            kwargs["type"] = param.annotation
 
         # For required parameters, add a positional argument. For optional parameters, add a flag with the default value.
         if param.required:
@@ -49,3 +52,19 @@ def build_parser(params: list[Parameter], description: str | None = None) -> arg
             parser.add_argument(*names, default=param.default, **kwargs)
 
     return parser
+
+# ----------------
+# HELPER FUNCTIONS
+# ----------------
+
+def _make_type_converter(param: Parameter):
+    """
+    Create a type converter function for a given parameter that will be used by argparse to convert
+    the raw string input into the expected type and validate it against any Spec constraints
+    """
+    def type_fn(raw: str):
+        try:
+            return parse_value(param, raw)
+        except ValidationError as e:
+            raise argparse.ArgumentTypeError(str(e)) from e
+    return type_fn

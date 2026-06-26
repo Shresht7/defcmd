@@ -160,3 +160,23 @@ def test_required_secret_blank_reprompts(monkeypatch):
 
     value = prompt_for_param(p)
     assert value == "s3cr3t"
+
+def test_min_reprompts():
+    def f(port: Annotated[int, Spec(min=1024)]):
+        pass
+
+    [p] = inspect_function_signature(f)
+    inputs = iter(["80", "443", "8080"])
+    value = prompt_for_param(p, input_fn=lambda _prompt: next(inputs))
+    assert value == 8080
+
+def test_max_reprompts():
+    def f(port: Annotated[int, Spec(max=65535)]):
+        pass
+
+    [p] = inspect_function_signature(f)
+    inputs = iter(["70000", "80000", "65535"])
+    value = prompt_for_param(p, input_fn=lambda _prompt: next(inputs))
+    assert value == 65535
+    
+

@@ -78,3 +78,17 @@ def test_spec_short_flag_works():
     parser = build_parser(inspect_function_signature(f))
     ns = parser.parse_args(["-p", "9090"])
     assert ns.port == 9090
+
+def test_min_max_enforced():
+    def f(port: Annotated[int, Spec(min=1024, max=65535)] = 8080):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    assert parser.parse_args([]).port == 8080
+    assert parser.parse_args(["--port", "1024"]).port == 1024
+    assert parser.parse_args(["--port", "65535"]).port == 65535
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--port", "443"])
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--port", "70000"])
+

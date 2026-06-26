@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from defcmd.introspect import Parameter
+from defcmd.convert import ValidationError, parse_value
 from typing import get_origin, get_args, Literal
 from getpass import getpass
 
@@ -12,7 +13,8 @@ def prompt_for_param(param: Parameter, input_fn=None):
 
     # If the parameter annotation is a Literal, we can extract the allowed choices and display them to the user in the prompt
     choices = None
-    if get_origin(param.annotation) is Literal:
+    origin = get_origin(param.annotation)
+    if origin is Literal:
         choices = list(get_args(param.annotation))
 
     # Determine the prompt message to display to the user.
@@ -38,12 +40,7 @@ def prompt_for_param(param: Parameter, input_fn=None):
     while True:
 
         # Prompt the user for input and read the response.
-        raw = ""
-        if is_secret:
-            raw = getpass(prompt, echo_char="*")
-        else:
-            raw = input_fn(prompt)
-        raw = raw.strip()  # Strip leading and trailing whitespace from the input
+        raw = _prompt(prompt, is_secret=is_secret, input_fn=input_fn)
 
         if raw == "":
             # If the user provided blank input, but the parameter is required, we need to prompt again
@@ -53,33 +50,38 @@ def prompt_for_param(param: Parameter, input_fn=None):
             # If the user provided blank input and the parameter is optional, we can return the default value
             else:
                 return param.default
-
-        # If the parameter has a set of allowed choices (like a Literal)
-        if choices is not None:
-            # If the user provided input that matches one of the choices, we can return it directly
-            if raw in choices:
-                return raw
-            # If the user provided invalid input that doesn't match any of the choices, we need to prompt again
-            print(f"Invalid choice. Please enter one of the following: {', '.join(choices)}")
+        
+        # Parse the user input into the expected type for the parameter
+        # If we encounter a ValidationError, print the error message and prompt the user again
+        try:
+            return parse_value(param, raw)
+        except ValidationError as e:
+            print(f"Error: {e}")
             continue
-        
-        # If the parameter is a boolean, we can accept a variety of common inputs to represent true and false values
-        if param.annotation is bool:
-            if raw.lower() in ["true", "yes", "y", "1"]:
-                return True
-            elif raw.lower() in ["false", "no", "n", "0"]:
-                return False
-            else:
-                print("Please enter a valid boolean value (true/false, yes/no, y/n, 1/0)")
-                continue
 
-        # For other types, we can attempt to convert the raw input to the correct type using the annotation. If it fails, we prompt again!
-        if isinstance(param.annotation, type) and param.annotation is not str:
-            try:
-                return param.annotation(raw) # Attempt to convert the raw input to the correct type using the annotation
-            except (ValueError, TypeError):
-                print(f"Please enter a valid {param.annotation.__name__}")
-                continue # If the conversion fails, we catch the exception and prompt the user again
-        
-        # If the annotation is not a type or is just a string, we can return the raw input as-is since there's no type conversion to be done
-        return raw
+        # IDEA: Consider adding a maximum number of attempts before giving up and raising an exception,
+        # to avoid infinite loops in case of repeated invalid input.
+
+# ----------------
+# HELPER FUNCTIONS
+# ----------------
+
+def _prompt(msg: str, is_secret=False, input_fn=None):
+    """Prompt the user for input with a given message and return the input value.
+    If is_secret is True, the input will be hidden (e.g., for passwords).
+    """
+    # Default to the built-in input function if no custom input function is provided
+    # This allows for mocking the input function for unit tests.
+    if input_fn is None:
+        input_fn = lambda prompt: input(prompt)
+        return input_fn(msg)
+
+    # If the input is secret, use getpass to hide the input;
+    # otherwise, use the provided input function.
+    if is_secret:
+        response = getpass(msg, echo_char="*")
+    else:
+        response = input_fn(msg)
+
+    # Trim the response before returning it
+    return response.strip()
