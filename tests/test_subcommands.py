@@ -26,3 +26,14 @@ def test_dispatch_multiple_commands():
 
     cli.run(["build", "--clean"])
     assert calls == [("build", True)]
+
+def test_unknown_subcommand_exists(monkeypatch):
+    cli = CLI()
+
+    @cli.subcmd
+    def init(name: str):
+        pass
+
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
+    with pytest.raises(SystemExit):
+        cli.run(["unknown_command"])
