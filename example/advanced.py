@@ -4,7 +4,7 @@ from defcmd.runner import cmd
 
 @cmd
 def deploy(
-    host: Annotated[str, Spec(help="target hostname")]
+    host: Annotated[str, Spec(help="target hostname", secret=True)]
     ):
     print(f"Deploying to {host}...")
 

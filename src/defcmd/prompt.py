@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from defcmd.introspect import Parameter
 from typing import get_origin, get_args, Literal
+from getpass import getpass
 
 def prompt_for_param(param: Parameter, input_fn=None):
 
@@ -29,12 +30,20 @@ def prompt_for_param(param: Parameter, input_fn=None):
 
     # TODO: Can allow substitution of hints like %help% and %choices% in the prompt string, which would be replaced with the actual help text and choices at runtime.
 
+    # Determine if the parameter is a secret (e.g., a password) and should be hidden when prompting.
+    is_secret = param.meta.secret if param.meta else False
+
     # Prompt the user for input until they provide a non-blank value
     # or, if the parameter is optional, they hit Enter to accept the default value
     while True:
 
-        # Use the parameter name and type annotation to create a helpful prompt message
-        raw = input_fn(prompt).strip()
+        # Prompt the user for input and read the response.
+        raw = ""
+        if is_secret:
+            raw = getpass(prompt, echo_char="*")
+        else:
+            raw = input_fn(prompt)
+        raw = raw.strip()  # Strip leading and trailing whitespace from the input
 
         if raw == "":
             # If the user provided blank input, but the parameter is required, we need to prompt again
