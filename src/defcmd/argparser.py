@@ -27,7 +27,7 @@ def build_parser(params: list[Parameter], description: str | None = None) -> arg
         # Handle boolean parameters with a special action that creates both --flag and --no-flag options and sets the default value appropriately
         if param.annotation is bool:
             default = param.default if not param.required else False
-            parser.add_argument(f"--{param.name}", action=argparse.BooleanOptionalAction, default=default)
+            parser.add_argument(f"--{param.name}", action=argparse.BooleanOptionalAction, default=default, **kwargs)
             continue # Skip the rest of the loop since we've already handled this parameter
 
         # If the annotation is a Literal, we can use the choices argument to restrict the allowed values

@@ -59,3 +59,14 @@ def test_spec_help_appears_in_help_output(capsys):
         parser.parse_args(["--help"])
     captured = capsys.readouterr()
     assert "target hostname" in captured.out
+
+def test_spec_help_appears_for_bool_flags(capsys):
+    def f(verbose: Annotated[bool, Spec(help="enable verbose output")] = False):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--help"])
+
+    captured = capsys.readouterr()
+    assert "enable verbose output" in captured.out
