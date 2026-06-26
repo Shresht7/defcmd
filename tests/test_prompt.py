@@ -180,3 +180,11 @@ def test_max_reprompts():
     assert value == 65535
     
 
+def test_pattern_reprompts():
+    def f(code: Annotated[str, Spec(pattern=r"^\d{4}$")]):
+        pass
+
+    [p] = inspect_function_signature(f)
+    inputs = iter(["abc", "12345", "6789"])
+    value = prompt_for_param(p, input_fn=lambda _prompt: next(inputs))
+    assert value == "6789"

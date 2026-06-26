@@ -3,6 +3,7 @@ from __future__ import annotations
 from defcmd.introspect import Parameter
 from defcmd.spec import Spec
 
+import re
 from typing import get_args, get_origin, Literal
 
 VALID_BOOL_TRUE = frozenset({"true", "yes", "y", "1", "on"})
@@ -56,10 +57,17 @@ def validate_value(param: Parameter, value):
         if not isinstance(value, (int, float)):
             raise ValidationError(f"Value for parameter '{param.name}' must be a number to apply min/max constraints, got: {value}, {type(value).__name__}")
         if spec.min is not None and value < spec.min:
-            raise ValidationError(f"must be atleast {spec.min}, got: {value}")
+            raise ValidationError(f"must be at least {spec.min}, got: {value}")
         if spec.max is not None and value > spec.max:
             raise ValidationError(f"must be at most {spec.max}, got: {value}")
-    
+
+    # regex pattern
+    if spec.pattern is not None:
+        if not isinstance(value, str):
+            raise ValidationError(f"Value for parameter '{param.name}' must be a string to apply pattern constraints, got: {value}, {type(value).__name__}")
+        if not re.fullmatch(spec.pattern, value):
+            raise ValidationError(f"must match pattern '{spec.pattern}', got: {value}")
+
 
 def parse_value(param: Parameter, raw: str):
     """Convert and validate a raw string value according to the parameter's type annotation and Spec constraints"""

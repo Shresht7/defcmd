@@ -92,3 +92,21 @@ def test_min_max_enforced():
     with pytest.raises(SystemExit):
         parser.parse_args(["--port", "70000"])
 
+def test_pattern_enforced():
+    def f(username: Annotated[str, Spec(pattern="^[a-zA-Z0-9_]+$")] = "user123"):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    assert parser.parse_args([]).username == "user123"
+    assert parser.parse_args(["--username", "valid_user"]).username == "valid_user"
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--username", "invalid-user!"])
+
+def test_pattern_on_positional():
+    def f(host: Annotated[str, Spec(pattern=r"\d+\.\d+\.\d+\.\d+")]):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    assert parser.parse_args(["10.0.0.1"]).host == "10.0.0.1"
+    with pytest.raises(SystemExit):
+        parser.parse_args(["invalid-host"])
