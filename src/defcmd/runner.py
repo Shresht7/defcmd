@@ -7,11 +7,13 @@ from __future__ import annotations
 import sys
 
 from defcmd.argparser import build_parser
-from defcmd.introspect import inspect_function_signature
+from defcmd.introspect import Parameter, inspect_function_signature
 from defcmd.interactive import is_interactive
 from defcmd.prompt import prompt_for_param
 
 from typing import Callable
+
+from defcmd.spec import Spec
 
 # Decorator to turn a function into a Cmd instance
 def cmd(fn):
@@ -77,24 +79,32 @@ class CLI:
     def run(self, argv: list[str] | None = None):
         """Runs the CLI, parsing the command-line arguments and dispatching to the appropriate subcommand"""
 
+        # If no arguments are provided, use the system command line arguments
+        if argv is None:
+            argv = sys.argv[1:]  # Skip the script name and use the rest of the args
+
         # Create a top-level parser for the CLI itself
         parser = build_parser([], description=self.description)
 
         # Create a subparser for each registered command
         subparsers = parser.add_subparsers(dest="command", required=True) 
         for cmd_name, cmd in self.commands.items():
-            subparser = subparsers.add_parser(cmd_name, description=cmd.description)
+            subparser = subparsers.add_parser(cmd_name, description=cmd.description, help=cmd.description)
             build_parser(cmd.params, parser=subparser)
 
-        # If no arguments are provided, use the system command line arguments
-        if argv is None:
-            argv = sys.argv[1:]  # Skip the script name and use the rest of the args
-
         # If no arguments are provided and we're in an interactive environment, run the interactive wizard for the CLI
+        # TODO: Implement a more sophisticated interactive mode that allows the user to select a command and then prompts for its parameters
         if is_interactive(argv):
-            # TODO: Implement an interactive wizard for the CLI that allows the user to select a command to run 
-            pass
-
+            print("Available commands:")
+            for cmd_name in self.commands:
+                print(f"  {cmd_name}")
+            cmd_name = input("Enter a command: ").strip()
+            if cmd_name not in self.commands:
+                print(f"Error: '{cmd_name}' is not a valid command.")
+                return
+            cmd = self.commands[cmd_name]
+            return cmd.run_wizard()
+        
         # Parse the command-line arguments
         args = parser.parse_args(argv)
 
