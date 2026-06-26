@@ -160,3 +160,60 @@ def test_required_secret_blank_reprompts(monkeypatch):
 
     value = prompt_for_param(p)
     assert value == "s3cr3t"
+
+def test_min_reprompts():
+    def f(port: Annotated[int, Spec(min=1024)]):
+        pass
+
+    [p] = inspect_function_signature(f)
+    inputs = iter(["80", "443", "8080"])
+    value = prompt_for_param(p, input_fn=lambda _prompt: next(inputs))
+    assert value == 8080
+
+def test_max_reprompts():
+    def f(port: Annotated[int, Spec(max=65535)]):
+        pass
+
+    [p] = inspect_function_signature(f)
+    inputs = iter(["70000", "80000", "65535"])
+    value = prompt_for_param(p, input_fn=lambda _prompt: next(inputs))
+    assert value == 65535
+    
+
+def test_pattern_reprompts():
+    def f(code: Annotated[str, Spec(pattern=r"^\d{4}$")]):
+        pass
+
+    [p] = inspect_function_signature(f)
+    inputs = iter(["abc", "12345", "6789"])
+    value = prompt_for_param(p, input_fn=lambda _prompt: next(inputs))
+    assert value == "6789"
+
+
+def test_prompt_getpass_secret_input(monkeypatch):
+    from defcmd.prompt import _prompt
+
+    calls = []
+    monkeypatch.setattr("defcmd.prompt.getpass", lambda msg, echo_char="*": calls.append((msg, echo_char)) or "s3cr3t")
+
+    result = _prompt("password:", is_secret=True, input_fn=lambda _: "visible")
+    assert result == "s3cr3t"
+    assert calls[0][1] == "*"
+
+
+def test_prompt_visible_input(monkeypatch):
+    from defcmd.prompt import _prompt
+
+    result = _prompt("name:", is_secret=False, input_fn=lambda _: "Alice")
+    assert result == "Alice"
+
+
+def test_prompt_default_input_fn_secret(monkeypatch):
+    """_prompt falls through to getpass even when input_fn is None"""
+    from defcmd.prompt import _prompt
+
+    monkeypatch.setattr("builtins.input", lambda _: "should-not-be-used")
+    monkeypatch.setattr("defcmd.prompt.getpass", lambda msg, echo_char="*": "hidden-value")
+
+    result = _prompt("token:", is_secret=True)
+    assert result == "hidden-value"

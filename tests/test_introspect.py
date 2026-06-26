@@ -62,3 +62,12 @@ def test_annotated_specifications():
     assert host.annotation is str  # unwrapped, not Annotated[...]
     assert host.spec == Spec(help="target hostname")
     assert port.spec is None
+
+def test_spec_validation_survives_introspection():
+    def f(port: Annotated[int, Spec(min=1024, max=65535, pattern=r"^\d+$")]):
+        pass
+
+    [param] = inspect_function_signature(f)
+    assert param.spec and param.spec.min == 1024
+    assert param.spec and param.spec.max == 65535
+    assert param.spec and param.spec.pattern == r"^\d+$"

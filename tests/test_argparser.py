@@ -78,3 +78,49 @@ def test_spec_short_flag_works():
     parser = build_parser(inspect_function_signature(f))
     ns = parser.parse_args(["-p", "9090"])
     assert ns.port == 9090
+
+def test_min_max_enforced():
+    def f(port: Annotated[int, Spec(min=1024, max=65535)] = 8080):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    assert parser.parse_args([]).port == 8080
+    assert parser.parse_args(["--port", "1024"]).port == 1024
+    assert parser.parse_args(["--port", "65535"]).port == 65535
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--port", "443"])
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--port", "70000"])
+
+def test_pattern_enforced():
+    def f(username: Annotated[str, Spec(pattern="^[a-zA-Z0-9_]+$")] = "user123"):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    assert parser.parse_args([]).username == "user123"
+    assert parser.parse_args(["--username", "valid_user"]).username == "valid_user"
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--username", "invalid-user!"])
+
+def test_pattern_on_positional():
+    def f(host: Annotated[str, Spec(pattern=r"\d+\.\d+\.\d+\.\d+")]):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    assert parser.parse_args(["10.0.0.1"]).host == "10.0.0.1"
+    with pytest.raises(SystemExit):
+        parser.parse_args(["invalid-host"])
+
+def test_custom_validation_function():
+    def validate_port(value):
+        if value % 2 != 0:
+            raise ValueError("port must be even")
+
+    def f(port: Annotated[int, Spec(validate=validate_port)] = 8080):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    assert parser.parse_args([]).port == 8080
+    assert parser.parse_args(["--port", "8082"]).port == 8082
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--port", "8081"])

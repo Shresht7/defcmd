@@ -94,7 +94,7 @@ python greet.py Alice --times 3
 
 ### Boolean flags
 
-`bool` parameters are always flags, never positionals — even if required. They support both the on and off form:
+`bool` parameters are always flags, never positionals, even if required. They support both the on and off form:
 
 ```python
 def greet(name: str, excited: bool = False):
@@ -141,6 +141,7 @@ When using the advanced `Spec` annotations:
 - Parameters with `Spec(prompt=...)` can override the default prompt text.
 - Parameters with `Spec(secret=True)` hide the input (for passwords, tokens, etc.).
 - Parameters with `Spec(help=...)` can override the default help text shown in `--help`.
+- Parameters with validation constraints (`min`, `max`, `pattern`) will re-prompt until the value satisfies the constraint.
 
 Interactive mode only triggers when **both** of these are true: no arguments were passed, and stdin is a real terminal (not piped or redirected). Running a script with no args in a non-interactive context (cron, CI, piped input) just errors normally instead of hanging waiting for input.
 
@@ -163,7 +164,7 @@ positional arguments:
   host
 ```
 
-Per-parameter help text (and richer parameter specifications via `Annotated`) is planned but not yet implemented.
+Use `Annotated[..., Spec(...)]` to add per-parameter metadata — see below.
 
 ### Advanced Parameter Specification
 
@@ -179,7 +180,7 @@ def action(
         payload: Annotated[str, Spec(help="The payload to send", prompt="Payload")],
         token: Annotated[str, Spec(short="t", help="The authentication token", prompt="Enter your token", secret=True)],
         host: Annotated[str, Spec(help="The host to connect to")] = "localhost",
-        port: Annotated[int, Spec(short='p', help="The port to connect to")] = 8080,
+        port: Annotated[int, Spec(short='p', min=1, max=65535, help="The port to connect to")] = 8080,
         verbose: Annotated[bool, Spec(short='v', help="Enable verbose output")] = False
     ):
     # ... Your Logic Here ...
@@ -197,12 +198,16 @@ Enter your token: ********
 
 #### Specification Options
 
-| Spec     | Description                                     | Overrides                |
-| -------- | ----------------------------------------------- | ------------------------ |
-| `short`  | Short flag for the parameter (e.g., `-p`).      |                          |
-| `help`   | Help text for the parameter, shown in `--help`. | The default help message |
-| `prompt` | Custom prompt text for interactive mode.        | The default prompt text  |
-| `secret` | If `True`, input is hidden in interactive mode. |                          |
+| Spec       | Description                                              | Overrides                |
+| ---------- | -------------------------------------------------------- | ------------------------ |
+| `short`    | Short flag for the parameter (e.g., `-p`).               |                          |
+| `help`     | Help text for the parameter, shown in `--help`.          | The default help message |
+| `prompt`   | Custom prompt text for interactive mode.                 | The default prompt text  |
+| `secret`   | If `True`, input is hidden in interactive mode.          |                          |
+| `min`      | Minimum numeric value (inclusive).                       |                          |
+| `max`      | Maximum numeric value (inclusive).                       |                          |
+| `pattern`  | A regex pattern the value must match (uses `fullmatch`). |                          |
+| `validate` | A custom validation function for the parameter.          |                          |
 
 ### What's not supported (yet)
 
@@ -268,7 +273,6 @@ uv run python example/script.py
 ### ☑️ TODO / Ideas 💡
 
 - [ ] Write proper module documentation
-- [ ] Annotated specifications for richer parameter types (e.g., min/max, regex, validate etc.).
 - [ ] Subcommands (multiple `@cmd`-decorated functions in one program).
 
 ---
