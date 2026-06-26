@@ -37,3 +37,26 @@ def test_unknown_subcommand_exists(monkeypatch):
     monkeypatch.setattr("sys.stdin.isatty", lambda: False)
     with pytest.raises(SystemExit):
         cli.run(["unknown_command"])
+
+def test_help_list_subcommands(capsys):
+    cli = CLI(description="Test CLI")
+
+    @cli.subcmd
+    def init(name: str):
+        """Initialize a project"""
+        pass
+
+    @cli.subcmd
+    def build(clean: bool = False):
+        """Build the project"""
+        pass
+
+    with pytest.raises(SystemExit):
+        cli.run(["--help"])
+
+    captured = capsys.readouterr()
+    assert "Test CLI" in captured.out
+    assert "init" in captured.out
+    assert "build" in captured.out
+    assert "Initialize a project" in captured.out
+    assert "Build the project" in captured.out
