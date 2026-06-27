@@ -343,6 +343,7 @@ uv run python example/script.py
 ### ☑️ TODO / Ideas 💡
 
 - [ ] Write proper module documentation
+- [ ] With `subcmd` done, add support for nested subcommands (like `git remote add`).
 
 ---
 
