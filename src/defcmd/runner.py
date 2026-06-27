@@ -7,13 +7,11 @@ from __future__ import annotations
 import sys
 
 from defcmd.argparser import build_parser
-from defcmd.introspect import Parameter, inspect_function_signature
+from defcmd.introspect import inspect_function_signature
 from defcmd.interactive import is_interactive
 from defcmd.prompt import prompt_for_param
 
 from typing import Callable
-
-from defcmd.spec import Spec
 
 # Decorator to turn a function into a Cmd instance
 def cmd(fn):
