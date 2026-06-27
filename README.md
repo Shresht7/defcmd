@@ -273,6 +273,76 @@ The `@cli.subcmd` decorator accepts:
 - `name` — override the subcommand name (defaults to the function name).
 - `description` — override the help text (defaults to the function docstring).
 
+### Nested subcommands / groups
+
+Use `cli.group()` to create command groups with nested subcommands:
+
+```python
+cli = CLI(description="Cloud tool")
+
+# Create a group and register subcommands on it
+db = cli.group("db", description="Database commands")
+
+@db.subcmd
+def migrate(message: str):
+    """Run database migrations"""
+    print(f"Running migration: {message}")
+
+@db.subcmd
+def seed(count: int = 10):
+    """Seed the database"""
+    print(f"Seeding with {count} records")
+
+if __name__ == "__main__":
+    cli.run()
+```
+
+```bash
+$ python tool.py --help
+usage: tool.py [-h] {db} ...
+
+Cloud tool
+
+positional arguments:
+  {db}
+    db         Database commands
+
+$ python tool.py db --help
+usage: tool.py db [-h] {migrate,seed} ...
+
+Database commands
+
+positional arguments:
+  {migrate,seed}
+    migrate      Run database migrations
+    seed         Seed the database
+```
+
+Groups can be nested arbitrarily deep:
+
+```python
+container = cli.group("container", description="Manage containers")
+
+@container.subcmd
+def run(image: str, detach: bool = False):
+    """Run a container"""
+    print(f"Running {image}")
+
+logs = container.group("logs", description="View container logs")
+
+@logs.subcmd
+def follow(name: str):
+    """Follow log output"""
+    print(f"Following {name}")
+```
+
+```bash
+$ python tool.py container run nginx --detach
+$ python tool.py container logs follow my_container
+```
+
+Interactive mode works with groups — it recursively prompts until it reaches a leaf command, then runs its wizard.
+
 ---
 
 ### What's not supported (yet)
@@ -343,7 +413,6 @@ uv run python example/script.py
 ### ☑️ TODO / Ideas 💡
 
 - [ ] Write proper module documentation
-- [ ] With `subcmd` done, add support for nested subcommands (like `git remote add`).
 
 ---
 
