@@ -27,6 +27,24 @@ def seed(data: str):
     print(f"Seeding database with data: {data}")
 
 
+# Nested subcommands can be created by creating another group under the 'database' group
+admin = db.group("admin", description="Database admin commands")
+
+@admin.subcmd
+def reset(confirm: Annotated[bool, Spec(short='c')]):
+    """Reset the database (use with caution)"""
+    if confirm:
+        print("Resetting the database...")
+    else:
+        print("Reset not confirmed. Aborting.")
+
+@admin.subcmd
+def status():
+    """Check the status of the database"""
+    print("Database status: All systems operational.")
+
+    
+
 # Run the CLI with the provided command-line arguments
 if __name__ == "__main__":
     cli.run()
