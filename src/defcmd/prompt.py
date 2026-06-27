@@ -9,7 +9,7 @@ def prompt_for_param(param: Parameter, input_fn=None):
 
      # Default to the built-in input function if no custom input function is provided
     if input_fn is None:
-        input_fn = lambda prompt: input(prompt)
+        input_fn = input
 
     # If the parameter annotation is a Literal, we can extract the allowed choices and display them to the user in the prompt
     choices = None
@@ -73,7 +73,7 @@ def _prompt(msg: str, is_secret=False, input_fn=None):
     # Default to the built-in input function if no custom input function is provided
     # This allows for mocking the input function for unit tests.
     if input_fn is None:
-        input_fn = lambda prompt: input(prompt)
+        input_fn = input
 
     # If the input is secret, use getpass to hide the input;
     # otherwise, use the provided input function.
