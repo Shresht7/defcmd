@@ -1,4 +1,4 @@
-from defcmd.ansi import ANSICode, ANSICodes, ANSIColorCode, compose, reset, bold, dim, italic, underline, inverse, invisible, inverse, strikethrough, black, red, green, yellow, blue, magenta, cyan, white, default
+from defcmd.ansi import ANSICode, ANSICodes, ANSIColorCode, ANSIRGBColorCode, compose, reset, bold, dim, italic, underline, inverse, invisible, inverse, strikethrough, black, red, green, yellow, blue, magenta, cyan, white, default
 
 # ---------
 # ANSI CODE
@@ -154,3 +154,15 @@ def test_compose_function():
     text = "Hello"
     assert str(stylish) == "\x1b[1;31;4m"
     assert stylish(text) == "\x1b[1;31;4mHello\x1b[0m"
+
+def test_compose_function_with_multiple_args():
+    stylish = compose(bold, red, underline)
+    text1 = "Hello"
+    text2 = "World"
+    assert stylish(text1, text2) == "\x1b[1;31;4mHello World\x1b[0m"
+
+def test_ansi_rgb_color():
+    rgb_code = ANSIRGBColorCode(255, 12, 25)  # Red color
+    assert str(rgb_code) == "\x1b[38;2;255;12;25m"
+    assert str(rgb_code.bg) == "\x1b[48;2;255;12;25m"
+    assert rgb_code.wrap("Hello") == "\x1b[38;2;255;12;25mHello\x1b[39m"
