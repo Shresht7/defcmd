@@ -1,4 +1,4 @@
-from defcmd.ansi import ANSICode, ANSICodes, ANSIColorCode, ANSIRGBColorCode, Cursor, compose, reset, bold, dim, italic, underline, inverse, invisible, inverse, strikethrough, black, red, green, yellow, blue, magenta, cyan, white, default
+from defcmd.terminal.ansi import *
 
 # ---------
 # ANSI CODE
