@@ -1,4 +1,4 @@
-from defcmd.ansi import ANSICode, ANSICodes, ANSIColorCode, ANSIRGBColorCode, compose, reset, bold, dim, italic, underline, inverse, invisible, inverse, strikethrough, black, red, green, yellow, blue, magenta, cyan, white, default
+from defcmd.ansi import ANSICode, ANSICodes, ANSIColorCode, ANSIRGBColorCode, Cursor, compose, reset, bold, dim, italic, underline, inverse, invisible, inverse, strikethrough, black, red, green, yellow, blue, magenta, cyan, white, default
 
 # ---------
 # ANSI CODE
@@ -166,3 +166,67 @@ def test_ansi_rgb_color():
     assert str(rgb_code) == "\x1b[38;2;255;12;25m"
     assert str(rgb_code.bg) == "\x1b[48;2;255;12;25m"
     assert rgb_code.wrap("Hello") == "\x1b[38;2;255;12;25mHello\x1b[39m"
+
+# ------
+# CURSOR
+# ------
+
+def test_cursor_up():
+    assert Cursor.up() == "\x1b[1A"
+
+def test_cursor_up_n():
+    assert Cursor.up(3) == "\x1b[3A"
+
+def test_cursor_down():
+    assert Cursor.down() == "\x1b[1B"
+
+def test_cursor_down_n():
+    assert Cursor.down(5) == "\x1b[5B"
+
+def test_cursor_forward():
+    assert Cursor.forward() == "\x1b[1C"
+
+def test_cursor_forward_n():
+    assert Cursor.forward(10) == "\x1b[10C"
+
+def test_cursor_backward():
+    assert Cursor.backward() == "\x1b[1D"
+
+def test_cursor_backward_n():
+    assert Cursor.backward(4) == "\x1b[4D"
+
+def test_cursor_column():
+    assert Cursor.column(5) == "\x1b[5G"
+
+def test_cursor_position():
+    assert Cursor.position(3, 5) == "\x1b[3;5H"
+
+def test_cursor_save_position():
+    assert Cursor.save_position() == "\x1b[s"
+
+def test_cursor_restore_position():
+    assert Cursor.restore_position() == "\x1b[u"
+
+def test_cursor_hide():
+    assert Cursor.hide() == "\x1b[?25l"
+
+def test_cursor_show():
+    assert Cursor.show() == "\x1b[?25h"
+
+def test_cursor_clear_to_line_end():
+    assert Cursor.clear_to_line_end() == "\x1b[K"
+
+def test_cursor_clear_to_line_start():
+    assert Cursor.clear_to_line_start() == "\x1b[1K"
+
+def test_cursor_clear_line():
+    assert Cursor.clear_line() == "\x1b[2K"
+
+def test_cursor_clear_to_screen_end():
+    assert Cursor.clear_to_screen_end() == "\x1b[J"
+
+def test_cursor_clear_to_screen_start():
+    assert Cursor.clear_to_screen_start() == "\x1b[1J"
+
+def test_cursor_clear_screen():
+    assert Cursor.clear_screen() == "\x1b[2J"
