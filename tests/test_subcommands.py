@@ -112,3 +112,34 @@ def test_description_override_help(capsys):
     captured = capsys.readouterr()
     assert "Custom description for init command" in captured.out
 
+
+
+def test_subcommand_with_no_arguments():
+    cli = CLI()
+    calls = []
+
+    @cli.subcmd
+    def status():
+        calls.append("status called")
+
+    cli.run(["status"])
+    assert calls == ["status called"]
+
+
+
+def test_per_subcommand_help(capsys):
+    cli = CLI(description="Test CLI")
+
+    @cli.subcmd
+    def init(name: str):
+        """Initialize a project"""
+        pass
+
+    with pytest.raises(SystemExit):
+        cli.run(["init", "--help"])
+
+    captured = capsys.readouterr()
+    assert "Initialize a project" in captured.out
+
+
+
