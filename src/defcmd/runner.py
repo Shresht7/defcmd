@@ -55,8 +55,8 @@ class Cmd:
             kwargs[param.name] = prompt_for_param(param)
         return self.fn(**kwargs)
     
-    def add_parser(self, subparsers: ArgSubparsers, name: str):
-        """Add a subparser for this command to the provided subparsers object"""
+    def attach_to_parser(self, subparsers: ArgSubparsers, name: str):
+        """Attach this command's parser to a provided parent command's subparsers, allowing for nested commands"""
         parser = subparsers.add_parser(name, description=self.description, help=self.description)
         build_parser(self.params, parser=parser)
 
@@ -99,34 +99,29 @@ class CLI:
         # TODO: Implement a more sophisticated interactive mode that allows the user to select a command and then prompts for its parameters
         if is_interactive(argv):
             print("Available commands:")
-            for cmd_name in self.commands:
-                print(f"  {cmd_name}")
-            cmd_name = input("Enter a command: ").strip()
-            if cmd_name in self.commands:
-                return self.commands[cmd_name].run([])
-            print(f"Error: '{cmd_name}' is not a valid command.")
+            for cmdname in self.commands:
+                print(f"  {cmdname}")
+            cmdname = input("Enter a command: ").strip()
+            if cmdname in self.commands:
+                return self.commands[cmdname].run([])
+            print(f"Error: '{cmdname}' is not a valid command.")
             return
 
-        # Build parser just to show the "required" error message
-        if not argv:
+        # If no arguments are provided or the first argument is not a registered command, display the help message
+        if not argv or argv[0] not in self.commands:
             parser = build_parser([], description=self.description)
             subparsers = parser.add_subparsers(required=True)
             for name, cmd in self.commands.items():
-                cmd.add_parser(subparsers, name)
-            parser.parse_args(argv)
+                cmd.attach_to_parser(subparsers, name)
+            parser.parse_args(argv)  # handles --help, missing cmd, invalid cmd
 
-        cmd_name = argv[0]
-        if cmd_name not in self.commands:
-            parser = build_parser([], description=self.description)
-            subparsers = parser.add_subparsers(required=True)
-            for name, cmd in self.commands.items():
-                cmd.add_parser(subparsers, name)
-            parser.parse_args(argv)
+        # If a valid command is provided, dispatch to the corresponding Cmd instance's run method with the remaining arguments
+        cmdname, *rest = argv
+        return self.commands[cmdname].run(rest) 
 
-        return self.commands[cmd_name].run(argv[1:])  # Pass the remaining arguments to the selected command
-
-    def add_parser(self, subparsers: ArgSubparsers, name: str):
+    def attach_to_parser(self, subparsers: ArgSubparsers, name: str):
+        """Attach this CLI's parser to a provided parent command's subparsers, allowing for nested commands"""
         parser = subparsers.add_parser(name, description=self.description, help=self.description)
         inner = parser.add_subparsers(dest="__cmd", required=True)
         for subname, subcmd in self.commands.items():
-            subcmd.add_parser(inner, subname)
+            subcmd.attach_to_parser(inner, subname)
