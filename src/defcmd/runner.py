@@ -5,13 +5,16 @@ TODO: Public API. @cmd decorator that turns a function into a runnable command.
 from __future__ import annotations
 
 import sys
+import argparse
 
 from defcmd.argparser import build_parser
 from defcmd.introspect import inspect_function_signature
 from defcmd.interactive import is_interactive
 from defcmd.prompt import prompt_for_param
 
-from typing import Callable
+from typing import Callable, TypeAlias
+
+ArgSubparsers: TypeAlias = argparse._SubParsersAction[argparse.ArgumentParser]  # Type alias for subparsers in argparse
 
 # Decorator to turn a function into a Cmd instance
 def cmd(fn):
@@ -51,6 +54,11 @@ class Cmd:
         for param in self.params:
             kwargs[param.name] = prompt_for_param(param)
         return self.fn(**kwargs)
+    
+    def add_parser(self, subparsers: ArgSubparsers, name: str):
+        """Add a subparser for this command to the provided subparsers object"""
+        parser = subparsers.add_parser(name, description=self.description, help=self.description)
+        build_parser(self.params, parser=parser)
 
 class CLI:
     def __init__(self, description: str | None = None):
@@ -87,27 +95,6 @@ class CLI:
         if argv is None:
             argv = sys.argv[1:]  # Skip the script name and use the rest of the args
 
-        # Create a top-level parser for the CLI itself
-        parser = build_parser([], description=self.description)
-
-        # Create a subparser for each registered command
-        subparsers = parser.add_subparsers(dest="command", required=True) 
-        for cmd_name, cmd in self.commands.items():
-
-            # If the command is a group (CLI instance), create a subparser with nested subparsers for its subcommands
-            if isinstance(cmd, CLI):
-                # For command groups, create a subparser with nested subparsers
-                subparser = subparsers.add_parser(cmd_name, description=cmd.description, help=cmd.description)
-                group_subparsers = subparser.add_subparsers(dest="subcommand", required=True)
-                for sub_cmd_name, sub_cmd in cmd.commands.items():
-                    group_subparser = group_subparsers.add_parser(sub_cmd_name, description=sub_cmd.description, help=sub_cmd.description)
-                    build_parser(sub_cmd.params, parser=group_subparser)
-            
-            # For regular commands, create a simple subparser
-            else:
-                subparser = subparsers.add_parser(cmd_name, description=cmd.description, help=cmd.description)
-                build_parser(cmd.params, parser=subparser)
-
         # If no arguments are provided and we're in an interactive environment, run the interactive wizard for the CLI
         # TODO: Implement a more sophisticated interactive mode that allows the user to select a command and then prompts for its parameters
         if is_interactive(argv):
@@ -115,28 +102,31 @@ class CLI:
             for cmd_name in self.commands:
                 print(f"  {cmd_name}")
             cmd_name = input("Enter a command: ").strip()
-            if cmd_name not in self.commands:
-                print(f"Error: '{cmd_name}' is not a valid command.")
-                return
-            cmd = self.commands[cmd_name]
-            if isinstance(cmd, CLI):
-                return cmd.run([])
-            return cmd.run_wizard()
-        
-        # Parse the command-line arguments
-        args = parser.parse_args(argv)
+            if cmd_name in self.commands:
+                return self.commands[cmd_name].run([])
+            print(f"Error: '{cmd_name}' is not a valid command.")
+            return
 
-        # Dispatch to the appropriate subcommand based on the parsed command name
-        cmd_name = args.command
-        cmd = self.commands[cmd_name]
-        
-        # If the command is a group, dispatch to the subcommand within the group
-        if isinstance(cmd, CLI):
-            sub_cmd_name = args.subcommand
-            sub_cmd = cmd.commands[sub_cmd_name]
-            cmd_args = {param.name: getattr(args, param.name) for param in sub_cmd.params}
-            return sub_cmd.fn(**cmd_args)
-        
-        # Otherwise, run the command normally
-        cmd_args = {param.name: getattr(args, param.name) for param in cmd.params}
-        return cmd.fn(**cmd_args)
+        # Build parser just to show the "required" error message
+        if not argv:
+            parser = build_parser([], description=self.description)
+            subparsers = parser.add_subparsers(required=True)
+            for name, cmd in self.commands.items():
+                cmd.add_parser(subparsers, name)
+            parser.parse_args(argv)
+
+        cmd_name = argv[0]
+        if cmd_name not in self.commands:
+            parser = build_parser([], description=self.description)
+            subparsers = parser.add_subparsers(required=True)
+            for name, cmd in self.commands.items():
+                cmd.add_parser(subparsers, name)
+            parser.parse_args(argv)
+
+        return self.commands[cmd_name].run(argv[1:])  # Pass the remaining arguments to the selected command
+
+    def add_parser(self, subparsers: ArgSubparsers, name: str):
+        parser = subparsers.add_parser(name, description=self.description, help=self.description)
+        inner = parser.add_subparsers(dest="__cmd", required=True)
+        for subname, subcmd in self.commands.items():
+            subcmd.add_parser(inner, subname)
