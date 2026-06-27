@@ -14,7 +14,7 @@ from defcmd.prompt import prompt_for_param
 
 from typing import Callable, TypeAlias
 
-ArgSubparsers: TypeAlias = argparse._SubParsersAction[argparse.ArgumentParser]  # Type alias for subparsers in argparse
+ArgSubparsers: TypeAlias = argparse._SubParsersAction  # Type alias for subparsers in argparse
 
 # Decorator to turn a function into a Cmd instance
 def cmd(fn):
