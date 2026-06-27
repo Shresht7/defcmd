@@ -160,3 +160,90 @@ magenta = ANSIColorCode(35)
 cyan = ANSIColorCode(36)
 white = ANSIColorCode(37)
 default = ANSIColorCode(39)
+
+# ------
+# CURSOR
+# ------
+
+class Cursor:
+    """ANSI escape sequences for cursor movement and visibility control"""
+
+    @staticmethod
+    def up(n: int = 1) -> str:
+        """Move the cursor up by n lines."""
+        return f"{CSI}{n}A"
+    
+    @staticmethod
+    def down(n: int = 1) -> str:
+        """Move the cursor down by n lines."""
+        return f"{CSI}{n}B"
+    
+    @staticmethod
+    def forward(n: int = 1) -> str:
+        """Move the cursor forward (right) by n columns."""
+        return f"{CSI}{n}C"
+    
+    @staticmethod
+    def backward(n: int = 1) -> str:
+        """Move the cursor backward (left) by n columns."""
+        return f"{CSI}{n}D"
+    
+    @staticmethod
+    def column(n: int = 1) -> str:
+        """Move the cursor to column n (1-based index)."""
+        return f"{CSI}{n}G"
+
+    @staticmethod
+    def position(row: int = 1, col: int = 1) -> str:
+        """Move the cursor to the specified row and column (1-based index)."""
+        return f"{CSI}{row};{col}H"
+    
+    @staticmethod
+    def save_position() -> str:
+        """Save the current cursor position."""
+        return f"{CSI}s"
+    
+    @staticmethod
+    def restore_position() -> str:
+        """Restore the cursor to the last saved position."""
+        return f"{CSI}u"
+    
+    @staticmethod
+    def hide() -> str:
+        """Hide the cursor."""
+        return f"{CSI}?25l"
+    
+    @staticmethod
+    def show() -> str:
+        """Show the cursor."""
+        return f"{CSI}?25h"
+    
+    @staticmethod
+    def clear_to_line_end() -> str:
+        """Clear the line from the cursor position to the end of the line."""
+        return f"{CSI}K"
+    
+    @staticmethod
+    def clear_to_line_start() -> str:
+        """Clear the line from the cursor position to the start of the line."""
+        return f"{CSI}1K"
+    
+    @staticmethod
+    def clear_line() -> str:
+        """Clear the entire line."""
+        return f"{CSI}2K"
+    
+    @staticmethod
+    def clear_to_screen_end() -> str:
+        """Clear the screen from the cursor position to the end of the screen."""
+        return f"{CSI}J"
+    
+    @staticmethod
+    def clear_to_screen_start() -> str:
+        """Clear the screen from the cursor position to the start of the screen."""
+        return f"{CSI}1J"
+    
+    @staticmethod
+    def clear_screen() -> str:
+        """Clear the entire screen."""
+        return f"{CSI}2J"
