@@ -13,9 +13,12 @@ from defcmd.convert import ValidationError, parse_value
 
 from typing import get_origin, get_args, Literal
 
-def build_parser(params: list[Parameter], description: str | None = None) -> argparse.ArgumentParser:
+def build_parser(params: list[Parameter], description: str | None = None, parser: argparse.ArgumentParser | None = None) -> argparse.ArgumentParser:
     """Build an `argparse.ArgumentParser` based on the list of `Parameter` objects extracted from a function signature"""
-    parser = argparse.ArgumentParser(description=description)
+    
+    # If no parser is provided, create a new one with the given description
+    if parser is None:
+        parser = argparse.ArgumentParser(description=description)
 
     for param in params:
 

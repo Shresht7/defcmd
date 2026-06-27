@@ -209,10 +209,75 @@ Enter your token: ********
 | `pattern`  | A regex pattern the value must match (uses `fullmatch`). |                          |
 | `validate` | A custom validation function for the parameter.          |                          |
 
+### Subcommands
+
+Multiple commands can be grouped together using `CLI`:
+
+```python
+from defcmd import CLI
+
+cli = CLI(description="Project management tool")
+
+@cli.subcmd
+def init(name: str):
+    """Initialize a new project"""
+    print(f"Project '{name}' created")
+
+@cli.subcmd(name="build-all")
+def build(clean: bool = False):
+    """Build the project"""
+    print("Building... (clean={clean})")
+
+@cli.subcmd(description="Deploy to production (overrides docstring)")
+def deploy(env: str = "prod"):
+    """Deploy the project"""
+    print(f"Deploying to {env}")
+
+if __name__ == "__main__":
+    cli.run()
+```
+
+```bash
+$ python project.py --help
+usage: project.py [-h] {init,build-all,deploy} ...
+
+Project management tool
+
+positional arguments:
+  {init,build-all,deploy}
+    init                 Initialize a new project
+    build-all            Build the project
+    deploy               Deploy to production (overrides docstring)
+
+$ python project.py init myapp
+Project 'myapp' created
+
+$ python project.py deploy --env staging
+Deploying to staging
+```
+
+Run with no arguments in a terminal to pick a command interactively:
+
+```bash
+$ python project.py
+Available commands:
+  init
+  build-all
+  deploy
+Enter a command: init
+Name: myapp
+Project 'myapp' created
+```
+
+The `@cli.subcmd` decorator accepts:
+- `name` — override the subcommand name (defaults to the function name).
+- `description` — override the help text (defaults to the function docstring).
+
+---
+
 ### What's not supported (yet)
 
 - `*args` and `**kwargs` in the decorated function's signature raises an error at decoration time.
-- Subcommands (multiple `@cmd`-decorated functions in one program).
 
 ---
 
@@ -235,21 +300,26 @@ uv sync
 ```
 ./
 ├── example/
-│   └── script.py               # Example Script
+│   ├── script.py               # Basic Example
+│   └── advanced.py             # Advanced Spec Example
 ├── src/
 │   └── defcmd/
 │       ├── __init__.py         # Package Init
 │       ├── argparser.py        # Argument Parser
+│       ├── convert.py          # Type Conversion & Validation
 │       ├── interactive.py      # Interactive Prompting Wizard
 │       ├── introspect.py       # Function Signature Introspection
 │       ├── prompt.py           # Prompt Utilities
-│       └── runner.py           # Command Runner
+│       ├── runner.py           # Command & CLI Runner
+│       └── spec.py             # Spec Annotation
 ├── tests/
 │   ├── test_argparser.py
+│   ├── test_convert.py
 │   ├── test_interactive.py
 │   ├── test_introspect.py
 │   ├── test_prompt.py
-│   └── test_runner.py
+│   ├── test_runner.py
+│   └── test_subcommands.py
 ├── .gitignore
 ├── .python-version
 ├── README.md
@@ -273,7 +343,7 @@ uv run python example/script.py
 ### ☑️ TODO / Ideas 💡
 
 - [ ] Write proper module documentation
-- [ ] Subcommands (multiple `@cmd`-decorated functions in one program).
+- [ ] With `subcmd` done, add support for nested subcommands (like `git remote add`).
 
 ---
 
