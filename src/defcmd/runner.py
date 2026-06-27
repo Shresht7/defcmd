@@ -74,6 +74,12 @@ class CLI:
 
         return decorator  # Otherwise, return the decorator for later use
 
+    def group(self, name: str, description: str | None = None):
+        """Creates a subcommand group, allowing for nested commands"""
+        group_cli = CLI(description=description)  # Create a new CLI instance for the group
+        self.commands[name] = group_cli           # Register the group as a command in the parent CLI
+        return group_cli                          # Return the group CLI for further command registration
+
     def run(self, argv: list[str] | None = None):
         """Runs the CLI, parsing the command-line arguments and dispatching to the appropriate subcommand"""
 
@@ -87,8 +93,20 @@ class CLI:
         # Create a subparser for each registered command
         subparsers = parser.add_subparsers(dest="command", required=True) 
         for cmd_name, cmd in self.commands.items():
-            subparser = subparsers.add_parser(cmd_name, description=cmd.description, help=cmd.description)
-            build_parser(cmd.params, parser=subparser)
+
+            # If the command is a group (CLI instance), create a subparser with nested subparsers for its subcommands
+            if isinstance(cmd, CLI):
+                # For command groups, create a subparser with nested subparsers
+                subparser = subparsers.add_parser(cmd_name, description=cmd.description, help=cmd.description)
+                group_subparsers = subparser.add_subparsers(dest="subcommand", required=True)
+                for sub_cmd_name, sub_cmd in cmd.commands.items():
+                    group_subparser = group_subparsers.add_parser(sub_cmd_name, description=sub_cmd.description, help=sub_cmd.description)
+                    build_parser(sub_cmd.params, parser=group_subparser)
+            
+            # For regular commands, create a simple subparser
+            else:
+                subparser = subparsers.add_parser(cmd_name, description=cmd.description, help=cmd.description)
+                build_parser(cmd.params, parser=subparser)
 
         # If no arguments are provided and we're in an interactive environment, run the interactive wizard for the CLI
         # TODO: Implement a more sophisticated interactive mode that allows the user to select a command and then prompts for its parameters
@@ -101,6 +119,8 @@ class CLI:
                 print(f"Error: '{cmd_name}' is not a valid command.")
                 return
             cmd = self.commands[cmd_name]
+            if isinstance(cmd, CLI):
+                return cmd.run([])
             return cmd.run_wizard()
         
         # Parse the command-line arguments
@@ -109,5 +129,14 @@ class CLI:
         # Dispatch to the appropriate subcommand based on the parsed command name
         cmd_name = args.command
         cmd = self.commands[cmd_name]
+        
+        # If the command is a group, dispatch to the subcommand within the group
+        if isinstance(cmd, CLI):
+            sub_cmd_name = args.subcommand
+            sub_cmd = cmd.commands[sub_cmd_name]
+            cmd_args = {param.name: getattr(args, param.name) for param in sub_cmd.params}
+            return sub_cmd.fn(**cmd_args)
+        
+        # Otherwise, run the command normally
         cmd_args = {param.name: getattr(args, param.name) for param in cmd.params}
         return cmd.fn(**cmd_args)
