@@ -1,4 +1,4 @@
-from defcmd.ansi import ANSICode, ANSICodes, compose, reset, bold, dim, italic, underline, inverse, invisible, inverse, strikethrough, black, red, green, yellow, blue, magenta, cyan, white, default
+from defcmd.ansi import ANSICode, ANSICodes, ANSIColorCode, compose, reset, bold, dim, italic, underline, inverse, invisible, inverse, strikethrough, black, red, green, yellow, blue, magenta, cyan, white, default
 
 # ---------
 # ANSI CODE
@@ -12,36 +12,42 @@ def test_ansi_code_repr():
     code = ANSICode(31)
     assert repr(code) == "ANSICode(31)"
 
+def test_ansi_code_unset():
+    code = ANSICode(31, unset_code=39)
+    assert code.unset_code == 39
+    assert code.unset == "\x1b[39m"
+
 def test_ansi_code_wrap():
     code = ANSICode(31)
     text = "Hello"
     assert code.wrap(text) == "\x1b[31mHello\x1b[0m"
 
+def test_ansi_code_wrap_with_unset():
+    code = ANSICode(32, unset_code=39)
+    text = "Hello"
+    assert code.wrap(text) == "\x1b[32mHello\x1b[39m"
+
+def test_ansi_code_call():
+    code = ANSIColorCode(31)
+    text = "Hello"
+    assert code(text) == "\x1b[31mHello\x1b[39m"
+
 def test_ansi_code_bg():
-    code = ANSICode(31)
+    code = ANSIColorCode(31)
     assert str(code.bg) == "\x1b[41m"
 
 def test_ansi_code_bright():
-    code = ANSICode(31)
+    code = ANSIColorCode(31)
     assert str(code.bright) == "\x1b[91m"
 
 def test_ansi_code_bg_bright():
-    code = ANSICode(31)
+    code = ANSIColorCode(31)
     assert str(code.bg.bright) == "\x1b[101m"
 
 def test_ansi_code_bg_bright_wrap():
-    code = ANSICode(31)
+    code = ANSIColorCode(31)
     text = "Hello"
-    assert code.bg.bright.wrap(text) == "\x1b[101mHello\x1b[0m"
-
-def test_ansi_code_reset():
-    code = ANSICode(31)
-    assert code.RESET() == "\x1b[0m"
-
-def test_ansi_code_call():
-    code = ANSICode(31)
-    text = "Hello"
-    assert code(text) == "\x1b[31mHello\x1b[0m"
+    assert code.bg.bright.wrap(text) == "\x1b[101mHello\x1b[109m"
 
 # ----------
 # ANSI CODES
@@ -54,11 +60,6 @@ def test_ansi_codes_str():
 def test_ansi_codes_repr():
     codes = ANSICodes(31, 1)
     assert repr(codes) == "ANSICodes(ANSICode(31), ANSICode(1))"
-
-def test_ansi_codes_add():
-    codes = ANSICodes(31)
-    codes.add(1)
-    assert str(codes) == "\x1b[31;1m"
 
 def test_ansi_codes_wrap():
     codes = ANSICodes(31, 1)
@@ -74,6 +75,16 @@ def test_ansi_codes_call():
     codes = ANSICodes(31, 1)
     text = "Hello"
     assert codes(text) == "\x1b[31;1mHello\x1b[0m"
+
+def test_ansi_codes_add():
+    codes = ANSICodes(31)
+    codes.add(1)
+    assert str(codes) == "\x1b[31;1m"
+
+def test_ansi_codes_add_multiple():
+    codes = ANSICodes(31)
+    codes.add(1, 4, ANSICode(7))
+    assert str(codes) == "\x1b[31;1;4;7m"
 
 # -----
 # USAGE

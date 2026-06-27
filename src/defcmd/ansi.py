@@ -16,9 +16,11 @@ CSI_TERMINATOR = "m"
 # The ANSI escape code delimiter is the character that separates multiple parameters in an ANSI escape sequence.
 DELIMITER = ";"
 
+
 class ANSICode:
-    def __init__(self, code: int):
+    def __init__(self, code: int, unset_code: int = 0):
         self.code = code
+        self.unset_code = unset_code
 
     def __str__(self) -> str:
         return f"{CSI}{self.code}{CSI_TERMINATOR}"
@@ -26,45 +28,52 @@ class ANSICode:
     def __repr__(self) -> str:
         return f"ANSICode({self.code})"
     
+    @property
+    def unset(self) -> str:
+        """Return the ANSI escape code to unset the current formatting or color."""
+        return f"{CSI}{self.unset_code}{CSI_TERMINATOR}"
+
     def wrap(self, text: str) -> str:
         """Wrap the given text with the ANSI escape code to apply formatting."""
-        return f"{self}{text}{RESET}"
-
-    # TODO: Add some guards around bg and bright to ensure that the code is in the correct range for background colors and bright colors, respectively.
-
-    @property
-    def bg(self) -> ANSICode:
-        """Return a new ANSICode instance with the background color variant of the current code."""
-        return ANSICode(self.code + 10)
-
-    @property
-    def bright(self) -> ANSICode:
-        """Return a new ANSICode instance with the bright variant of the current code."""
-        return ANSICode(self.code + 60)
-
-    @staticmethod
-    def RESET() -> str:
-        """Return the ANSI escape code to reset all text formatting and color to default settings."""
-        return RESET
+        return f"{self}{text}{self.unset}"
     
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         return self.wrap(" ".join(str(arg) for arg in args))
-
-    def __add__(self, other: ANSICode | int) -> ANSICodes:
-        """Combine this ANSICode with another ANSICode or an integer to create an ANSICodes instance."""
-        if isinstance(other, int):
-            other = ANSICode(other)
-        return ANSICodes(self, other)
     
-    def __radd__(self, other: ANSICode | int) -> ANSICodes:
-        """Combine this ANSICode with another ANSICode or an integer to create an ANSICodes instance."""
-        if isinstance(other, int):
-            other = ANSICode(other)
-        return ANSICodes(other, self)
+class ANSIColorCode(ANSICode):
+    def __init__(self, code: int, unset_code: int = 39):
+        super().__init__(code, unset_code)
+
+    @property
+    def bg(self) -> ANSIColorCode:
+        """Return a new ANSIColorCode instance with the background color variant of the current code."""
+        return ANSIColorCode(self.code + 10, unset_code=self.unset_code + 10)
+
+    @property
+    def bright(self) -> ANSIColorCode:
+        """Return a new ANSIColorCode instance with the bright variant of the current code."""
+        return ANSIColorCode(self.code + 60, unset_code=self.unset_code + 60)
 
 class ANSICodes:
     def __init__(self, *codes: ANSICode | int):
         self.codes = [code if isinstance(code, ANSICode) else ANSICode(code) for code in codes]
+
+    def __str__(self) -> str:
+        return f"{CSI}{DELIMITER.join(str(code.code) for code in self.codes)}{CSI_TERMINATOR}"
+    
+    def __repr__(self) -> str:
+        return f"ANSICodes({', '.join(repr(code) for code in self.codes)})"
+
+    @property
+    def unset(self) -> str:
+        return RESET
+
+    def wrap(self, text: str) -> str:
+        """Wrap the given text with the ANSI escape codes to apply formatting."""
+        return f"{self}{text}{self.unset}"
+    
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        return self.wrap(" ".join(str(arg) for arg in args))
 
     def add(self, *codes: ANSICode | int) -> None:
         """Add one or more ANSI codes to the current set of codes."""
@@ -74,38 +83,25 @@ class ANSICodes:
             else:
                 self.codes.append(ANSICode(code))
 
-    def __str__(self) -> str:
-        return f"{CSI}{DELIMITER.join(str(code.code) for code in self.codes)}{CSI_TERMINATOR}"
-    
-    def __repr__(self) -> str:
-        return f"ANSICodes({', '.join(repr(code) for code in self.codes)})"
-
-    def wrap(self, text: str) -> str:
-        """Wrap the given text with the ANSI escape codes to apply formatting."""
-        return f"{self}{text}{RESET}"
-    
-    def __call__(self, *args: Any, **kwds: Any) -> Any:
-        return self.wrap(" ".join(str(arg) for arg in args))
-
 def compose(*codes: ANSICode | int) -> ANSICodes:
     """Compose multiple ANSI codes into a single ANSICodes instance."""
     return ANSICodes(*codes)
 
 reset = ANSICode(0)
-bold = ANSICode(1)
-dim = ANSICode(2)
-italic = ANSICode(3)
-underline = ANSICode(4)
-inverse = ANSICode(7)
-invisible = ANSICode(8)
-strikethrough = ANSICode(9)
+bold = ANSICode(1, 22)
+dim = ANSICode(2, 22)
+italic = ANSICode(3, 23)
+underline = ANSICode(4, 24)
+inverse = ANSICode(7, 27)
+invisible = ANSICode(8, 28)
+strikethrough = ANSICode(9, 29)
 
-black = ANSICode(30)
-red = ANSICode(31)
-green = ANSICode(32)
-yellow = ANSICode(33)
-blue = ANSICode(34)
-magenta = ANSICode(35)
-cyan = ANSICode(36)
-white = ANSICode(37)
-default = ANSICode(39)
+black = ANSIColorCode(30)
+red = ANSIColorCode(31)
+green = ANSIColorCode(32)
+yellow = ANSIColorCode(33)
+blue = ANSIColorCode(34)
+magenta = ANSIColorCode(35)
+cyan = ANSIColorCode(36)
+white = ANSIColorCode(37)
+default = ANSIColorCode(39)
