@@ -16,8 +16,13 @@ CSI_TERMINATOR = "m"
 # The ANSI escape code delimiter is the character that separates multiple parameters in an ANSI escape sequence.
 DELIMITER = ";"
 
+# ---------
+# ANSI CODE
+# ---------
 
 class ANSICode:
+    """Represents a single ANSI escape code for text formatting or color in terminal output."""
+
     def __init__(self, code: int, unset_code: int = 0):
         self.code = code
         self.unset_code = unset_code
@@ -39,8 +44,17 @@ class ANSICode:
     
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         return self.wrap(" ".join(str(arg) for arg in args))
-    
+
+# ---------------
+# ANSI COLOR CODE
+# ---------------
+
 class ANSIColorCode(ANSICode):
+    """
+    Represents an ANSI color code for text color in terminal output.
+    Comes with properties to get the background color and bright variants of the color code.
+    """
+    
     def __init__(self, code: int, unset_code: int = 39):
         super().__init__(code, unset_code)
 
@@ -54,7 +68,13 @@ class ANSIColorCode(ANSICode):
         """Return a new ANSIColorCode instance with the bright variant of the current code."""
         return ANSIColorCode(self.code + 60, unset_code=self.unset_code + 60)
 
+# ----------
+# ANSI CODES
+# ----------
+
 class ANSICodes:
+    """Represents a collection of ANSI escape codes for text formatting or color in terminal output."""
+
     def __init__(self, *codes: ANSICode | int):
         self.codes = [code if isinstance(code, ANSICode) else ANSICode(code) for code in codes]
 
@@ -83,9 +103,17 @@ class ANSICodes:
             else:
                 self.codes.append(ANSICode(code))
 
+# -------
+# COMPOSE
+# -------
+
 def compose(*codes: ANSICode | int) -> ANSICodes:
     """Compose multiple ANSI codes into a single ANSICodes instance."""
     return ANSICodes(*codes)
+
+# -----------
+# ANSI STYLES
+# -----------
 
 reset = ANSICode(0)
 bold = ANSICode(1, 22)
@@ -95,6 +123,10 @@ underline = ANSICode(4, 24)
 inverse = ANSICode(7, 27)
 invisible = ANSICode(8, 28)
 strikethrough = ANSICode(9, 29)
+
+# -----------
+# ANSI COLORS
+# -----------
 
 black = ANSIColorCode(30)
 red = ANSIColorCode(31)
