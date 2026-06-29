@@ -9,7 +9,7 @@ class InputReader(Protocol):
     def read_keypress(self) -> str: ...
 
 class DefaultInputReader:
-    """Default implementation of InputReader that uses standard input and getpass"""
+    """Default implementation of InputReader that uses standard input and getpass functions for reading input from the terminal"""
 
     def read(self, prompt: str) -> str:
         """Read input from the terminal"""

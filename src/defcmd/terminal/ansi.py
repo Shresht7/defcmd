@@ -10,7 +10,7 @@ CSI = f"{ESCAPE}["
 # ANSI escape code to reset all text formatting and color to default settings.
 RESET = f"{CSI}0m"
 
-# The ANSI escape code terminator is the character that indicates the end of an ANSI escape sequence.
+# The ANSI escape code terminator is the character that indicates the end of an ANSI control sequence.
 CSI_TERMINATOR = "m"
 
 # The ANSI escape code delimiter is the character that separates multiple parameters in an ANSI escape sequence.
@@ -72,16 +72,17 @@ class ANSIRGBColorCode(ANSICode):
     """
     Represents an ANSI RGB color code for text color in terminal output.
     Comes with properties to get the background color and bright variants of the color code.
+
+    ANSI RGB color codes are represented as a sequence of three integers (r, g, b) in the range 0-255.
+    The ANSI escape sequence for RGB colors is of the form: "\x1b[38;2;<r>;<g>;<b>m" for foreground colors
+    and "\x1b[48;2;<r>;<g>;<b>m" for background colors.
     """
     
     def __init__(self, r: int, g: int, b: int, code: int = 38, unset_code: int = 39):
-        # ANSI RGB color codes are represented as a sequence of three integers (r, g, b) in the range 0-255.
-        # The ANSI escape sequence for RGB colors is of the form: "\x1b[38;2;<r>;<g>;<b>m" for foreground colors
-        # and "\x1b[48;2;<r>;<g>;<b>m" for background colors.
         self.r = r
         self.g = g
         self.b = b
-        super().__init__(code=code, unset_code=unset_code)  # 38 is the code for setting foreground color
+        super().__init__(code=code, unset_code=unset_code)
 
     def __str__(self) -> str:
         return f"{CSI}{self.code};2;{self.r};{self.g};{self.b}{CSI_TERMINATOR}"

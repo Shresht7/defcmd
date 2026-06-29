@@ -56,6 +56,7 @@ def read_keypress(inject=None) -> str:
     raw = _read_raw_keypress()
     return _normalize(raw)
 
+# Mapping for special keys on Windows
 _win_special_key_map = {
     b"H": "up",
     b"P": "down",
@@ -72,8 +73,8 @@ def _read_raw_keypress() -> str:
         b = msvcrt.getch()  # Read the first byte (character) from the console. This can be a regular character or a special key indicator.
         
         # Handle special keys (like arrow keys) which are sent as two-character sequences on Windows
-        if b == b"\x00" or b == b"\xe0":          # Special keys (arrows, function keys, etc.)
-            b2 = msvcrt.getch()                 # Read the second character
+        if b == b"\x00" or b == b"\xe0":                        # Special keys (arrows, function keys, etc.)
+            b2 = msvcrt.getch()                                 # Read the second character
             return _win_special_key_map.get(b2, b2.decode())
         
         # Handle regular keys (letters, numbers, enter, etc.)
