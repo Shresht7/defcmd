@@ -10,7 +10,7 @@ import argparse
 from defcmd.argparser import build_parser
 from defcmd.introspect import inspect_function_signature
 from defcmd.interactive import is_interactive
-from defcmd.prompt import prompt_for_param
+from defcmd.widgets import prompt
 
 from typing import Callable, TypeAlias
 
@@ -52,7 +52,7 @@ class Cmd:
         """Run an interactive wizard to prompt the user for each parameter"""
         kwargs = {}
         for param in self.params:
-            kwargs[param.name] = prompt_for_param(param)
+            kwargs[param.name] = prompt(param)
         return self.fn(**kwargs)
     
     def attach_to_parser(self, subparsers: ArgSubparsers, name: str):
