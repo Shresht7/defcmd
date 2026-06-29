@@ -21,8 +21,9 @@ def auto_widget(param: Parameter, input_reader: InputReader | None = None) -> Wi
     # If no input reader is provided, use the default input reader.
     input_reader = DefaultInputReader() if input_reader is None else input_reader
 
-    # Use the custom prompt from Spec if provided, otherwise let the widget use its default
-    prompt = param.spec.prompt if param.spec and param.spec.prompt else None
+    # Determine the prompt and help text for the parameter. 
+    prompt = param.spec.prompt if param.spec and param.spec.prompt else param.name
+    help = param.spec.help if param.spec and param.spec.help else None
 
     # Determine the default value for the parameter.
     # If the parameter is required, we set the default to None, which will force the user to provide a value.
@@ -31,22 +32,21 @@ def auto_widget(param: Parameter, input_reader: InputReader | None = None) -> Wi
 
     # If the parameter is of type bool, we return a ConfirmWidget, which allows the user to confirm or deny a boolean choice.
     if param.annotation is bool:
-        return ConfirmWidget(prompt=prompt, default=default, input_reader=input_reader)
+        return ConfirmWidget(prompt=prompt, default=default, input_reader=input_reader, help=help)
     
     # If the parameter annotation is a Literal, we can extract the allowed choices and return a SelectWidget, which allows the user to select from a list of options.
     origin = get_origin(param.annotation)
     if origin is Literal:
         options = list(get_args(param.annotation))
-        return SelectWidget(prompt=prompt, options=options, default=default, input_reader=input_reader)
+        return SelectWidget(prompt=prompt, options=options, default=default, input_reader=input_reader, help=help)
 
     # If the parameter is of any other type, we return a TextInputWidget, which allows the user to input text.
     # Use the Spec prompt if provided, otherwise fall back to the parameter name as the label.
-    # TODO: Add help hint to the prompt if Spec.help is provided.
-    prompt = param.spec.prompt if param.spec and param.spec.prompt else param.name
     return TextInputWidget(
         prompt=prompt,
+        help=help,
         converter=lambda raw: parse_value(param, raw),
         secret=param.spec.secret if param.spec else False,
         default=default,
-        input_reader=input_reader
+        input_reader=input_reader,
     )

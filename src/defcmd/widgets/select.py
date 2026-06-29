@@ -12,6 +12,7 @@ class SelectWidget(Widget):
         *,
         prompt_prefix: str = cyan("? "),
         prompt_suffix: str = ": ",
+        help: str | None = None,
         selection_marker: str = magenta("▶"),
         options: list[str],
         default: str | None = None,
@@ -20,6 +21,7 @@ class SelectWidget(Widget):
         self._prompt = prompt or "select an option"
         self._prompt_prefix = prompt_prefix
         self._prompt_suffix = prompt_suffix
+        self._help = help
         self._options = options
         self._default = default
         self._input_reader = DefaultInputReader() if input_reader is None else input_reader
@@ -34,10 +36,16 @@ class SelectWidget(Widget):
 
     def render(self) -> str:
         label = bold(self._prompt) if self._prompt else ""
+        if self._help:
+            help_str = dim(f" ({self._help})")
+            label += f"{help_str}"
         return f"{self._prompt_prefix}{label}{self._prompt_suffix}"
     
     def render_done(self) -> str:
         label = bold(self._prompt)
+        if self._help:
+            help_str = dim(f" ({self._help})")
+            label += f"{help_str}"
         checkmark = green("✓")
         return f"{checkmark} {label}{self._prompt_suffix}{self._value}"
 

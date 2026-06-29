@@ -15,6 +15,7 @@ class TextInputWidget(Widget):
             *,
             prompt_prefix: str = cyan("? "),
             prompt_suffix: str = ": ",
+            help: str | None = None,
             default: Any = None,
             secret: bool = False,
             secret_char: str = "*",
@@ -24,6 +25,7 @@ class TextInputWidget(Widget):
         self._prompt = prompt
         self._prompt_prefix = prompt_prefix
         self._prompt_suffix = prompt_suffix
+        self._help = help
         self._default = default
         self._secret = secret
         self._secret_char = secret_char
@@ -35,6 +37,9 @@ class TextInputWidget(Widget):
     def render(self) -> str:
         """Render the prompt string to display"""
         label_str = bold(self._prompt) if self._prompt else ""
+        if self._help:
+            help_str = dim(f" ({self._help})")
+            label_str += f"{help_str}"
         if self._default is not None:
             default_str = dim(f"[default: {str(self._default)}]")
             label_str += f" {default_str}"
@@ -42,6 +47,9 @@ class TextInputWidget(Widget):
 
     def render_done(self) -> str:
         label_str = bold(self._prompt) if self._prompt else ""
+        if self._help:
+            help_str = dim(f" ({self._help})")
+            label_str += f"{help_str}"
         value_str = str(self._value) if self._value is not None else ""
         checkmark = green("✓")
         return f"{checkmark} {label_str}{self._prompt_suffix}{value_str}"

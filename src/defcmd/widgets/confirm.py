@@ -11,12 +11,14 @@ class ConfirmWidget(Widget):
             *,
             prompt_prefix: str = cyan("? "),
             prompt_suffix: str = ": ",
+            help: str | None = None,
             default: bool | None = None,
             input_reader: InputReader | None = None
     ):
         self._prompt = prompt or "confirm"
         self._prompt_prefix = prompt_prefix
         self._prompt_suffix = prompt_suffix
+        self._help = help
         self._default = default
         self._value = _UNSET
         self._value_str = ""
@@ -25,8 +27,9 @@ class ConfirmWidget(Widget):
 
     def render(self) -> str:
         label = bold(self._prompt) if self._prompt else ""
+        help_str = dim(f" ({self._help})") if self._help else ""
         default_str = self._get_default_str()
-        return f"{self._prompt_prefix}{label} {default_str}{self._prompt_suffix}"
+        return f"{self._prompt_prefix}{label}{help_str} {default_str}{self._prompt_suffix}"
 
     def _get_default_str(self) -> str:
         res = ""
@@ -41,9 +44,10 @@ class ConfirmWidget(Widget):
     def render_done(self) -> str:
         label = bold(self._prompt) if self._prompt else ""
         checkmark = green("✓")
+        help_str = dim(f" ({self._help})") if self._help else ""
         if self._value_str == "":
             self._value_str = "yes" if self._default is True else "no" if self._default is False else ""
-        return f"{checkmark} {label}{self._prompt_suffix}{self._value_str}"
+        return f"{checkmark} {label}{help_str}{self._prompt_suffix}{self._value_str}"
 
     def prompt(self) -> bool:
 
