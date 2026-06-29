@@ -5,27 +5,7 @@ from typing import Annotated, Literal
 from defcmd.introspect import inspect_function_signature
 from defcmd.spec import Spec
 from defcmd.widgets import prompt
-
-
-class ScriptedInputReader:
-    def __init__(self, *, values=(), secrets=(), keypresses=()):
-        self._values = iter(values)
-        self._secrets = iter(secrets)
-        self._keypresses = iter(keypresses)
-        self.prompts: list[str] = []
-        self.secret_prompts: list[tuple[str, str]] = []
-
-    def read(self, prompt: str) -> str:
-        self.prompts.append(prompt)
-        return next(self._values)
-
-    def read_secret(self, prompt: str, mask_char: str = "*") -> str:
-        self.secret_prompts.append((prompt, mask_char))
-        return next(self._secrets)
-
-    def read_keypress(self) -> str:
-        return next(self._keypresses)
-
+from defcmd.terminal.reader import ScriptedInputReader
 
 def test_required_str_returns_typed_value():
     def f(name: str):
