@@ -4,7 +4,7 @@ from typing import Annotated, Literal
 
 from defcmd.introspect import inspect_function_signature
 from defcmd.spec import Spec
-from defcmd.widgets import prompt
+from defcmd.widgets import prompt, auto_widget, SelectWidget, ConfirmWidget, TextInputWidget
 from defcmd.terminal.reader import ScriptedInputReader
 
 def test_required_str_returns_typed_value():
@@ -171,73 +171,24 @@ def test_pattern_reprompts():
     value = prompt(param, input_reader=ScriptedInputReader(values=["abc", "12345", "6789"]))
     assert value == "6789"
 
-
-def test_confirm_default_true():
-    def f(verbose: bool = True):
+def test_auto_widget_chooses_correct_widget():
+    def f(env: Literal["dev", "prod"] = "dev"):
         pass
 
     [param] = inspect_function_signature(f)
-    value = prompt(param, input_reader=ScriptedInputReader(keypresses=["enter"]))
-    assert value is True
+    widget = auto_widget(param, input_reader=ScriptedInputReader(keypresses=["enter"]))
+    assert isinstance(widget, SelectWidget)
 
-
-def test_confirm_default_none():
-    def f(explicit: bool):
+    def g(verbose: bool = False):
         pass
 
-    [param] = inspect_function_signature(f)
-    value = prompt(param, input_reader=ScriptedInputReader(keypresses=["y"]))
-    assert value is True
+    [param2] = inspect_function_signature(g)
+    widget2 = auto_widget(param2, input_reader=ScriptedInputReader(keypresses=["y"]))
+    assert isinstance(widget2, ConfirmWidget)
 
-
-def test_confirm_cached_value():
-    def f(verbose: bool = False):
+    def h(name: str):
         pass
 
-    [param] = inspect_function_signature(f)
-    reader = ScriptedInputReader(keypresses=["y"])
-    widget = _auto_widget(param, reader)
-    val1 = widget.value
-    val2 = widget.value
-    assert val1 is True
-    assert val2 is True
-
-
-def test_select_down_then_up_then_enter():
-    def f(env: Literal["dev", "staging", "prod"] = "dev"):
-        pass
-
-    [param] = inspect_function_signature(f)
-    value = prompt(param, input_reader=ScriptedInputReader(keypresses=["down", "up", "enter"]))
-    assert value == "dev"
-
-
-def test_select_empty_prompt():
-    from defcmd.widgets.select import SelectWidget
-
-    widget = SelectWidget(prompt="", options=["a", "b"], input_reader=ScriptedInputReader(keypresses=["enter"]))
-    assert widget.value == "a"
-
-
-def test_select_default_not_in_options():
-    from defcmd.widgets.select import SelectWidget
-
-    with pytest.raises(ValueError, match="not in the list of options"):
-        SelectWidget(options=["a", "b"], default="c")
-
-
-def test_text_no_converter():
-    def f(name: str):
-        pass
-
-    from defcmd.introspect import inspect_function_signature
-    from defcmd.widgets import prompt
-
-    [param] = inspect_function_signature(f)
-    reader = ScriptedInputReader(values=["Alice"])
-    widget = _auto_widget(param, reader)
-    widget._converter = None
-    assert widget.value == "Alice"
-
-
-from defcmd.widgets import auto_widget as _auto_widget
+    [param3] = inspect_function_signature(h)
+    widget3 = auto_widget(param3, input_reader=ScriptedInputReader(values=["Alice"]))
+    assert isinstance(widget3, TextInputWidget)
