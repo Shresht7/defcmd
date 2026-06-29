@@ -1,5 +1,6 @@
 from defcmd.widgets.base import Widget
-from defcmd.terminal import bold, dim, raw_mode, read_keypress
+from defcmd.terminal import bold, dim, raw_mode
+from defcmd.terminal.reader import InputReader, DefaultInputReader
 
 _UNSET = object()  # Sentinel value to indicate that no default has been set
 
@@ -11,11 +12,13 @@ class ConfirmWidget(Widget):
             *,
             sep: str = "? ",
             default: bool | None = None,
+            input_reader: InputReader | None = None
     ):
         self._prompt = prompt
         self._sep = sep
         self._default = default
         self._value = _UNSET
+        self._input_reader = DefaultInputReader() if input_reader is None else input_reader 
         self._interacted: bool = False
 
     def render(self) -> str:
@@ -43,7 +46,7 @@ class ConfirmWidget(Widget):
 
         with raw_mode():
             while True:
-                key = read_keypress()
+                key = self._input_reader.read_keypress()
                 if key == "enter":
                     if self._default is not None:
                         self._value = self._default

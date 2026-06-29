@@ -2,23 +2,27 @@ from defcmd.widgets.base import Widget
 from defcmd.widgets.text import TextInputWidget
 from defcmd.widgets.confirm import ConfirmWidget
 from defcmd.widgets.select import SelectWidget
+from defcmd.terminal.reader import InputReader, DefaultInputReader
 from defcmd.introspect import Parameter
-from defcmd.convert import parse_value, ValidationError
+from defcmd.convert import parse_value
 
 from typing import get_origin, get_args, Literal
 
-def prompt(param: Parameter, input_fn=None):
+def prompt(param: Parameter, input_reader: InputReader | None = None):
     """Prompt the user for input based on the parameter's type and specifications."""
-    # FIXME: Do something with the input_fn parameter, which is currently unused. It should allow for custom input functions to be passed in for testing or other purposes.
-    widget = auto_widget(param)
+    input_reader = DefaultInputReader() if input_reader is None else input_reader
+    widget = auto_widget(param, input_reader=input_reader)
     return widget.value
 
 # IDEA: Consider adding a maximum number of attempts before giving up and raising an exception,
 # to avoid infinite loops in case of repeated invalid input.
 
 
-def auto_widget(param: Parameter) -> Widget:
+def auto_widget(param: Parameter, input_reader: InputReader | None = None) -> Widget:
     """Return the appropriate widget class based on the type of the parameter."""
+
+    # If no input reader is provided, use the default input reader.
+    input_reader = DefaultInputReader() if input_reader is None else input_reader
 
     # # Build the prompt string for the parameter, which includes type hints and help text.
     prompt = _build_prompt(param)
@@ -30,22 +34,22 @@ def auto_widget(param: Parameter) -> Widget:
 
     # If the parameter is of type bool, we return a ConfirmWidget, which allows the user to confirm or deny a boolean choice.
     if param.annotation is bool:
-        return ConfirmWidget(prompt=prompt, default=default)
+        return ConfirmWidget(prompt=prompt, default=default, input_reader=input_reader)
     
     # If the parameter annotation is a Literal, we can extract the allowed choices and return a SelectWidget, which allows the user to select from a list of options.
     origin = get_origin(param.annotation)
     if origin is Literal:
         options = list(get_args(param.annotation))
-        return SelectWidget(prompt=prompt, options=options, default=default)
+        return SelectWidget(prompt=prompt, options=options, default=default, input_reader=input_reader)
 
     # If the parameter is of any other type, we return a TextInputWidget, which allows the user to input text.
     # The TextInputWidget can also handle secret input (e.g., passwords) if specified in the parameter's specifications.    
-    secret = param.spec.secret if param.spec else False
     return TextInputWidget(
         prompt=prompt,
         default=default,
         converter=lambda raw: parse_value(param, raw),
-        secret=secret
+        secret=param.spec.secret if param.spec else False,
+        input_reader=input_reader
     )
 
 def _build_prompt(param: Parameter) -> str:

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from defcmd.widgets.base import Widget
-from defcmd.terminal import bold, dim, red, inverse, Cursor, raw_mode, read_keypress
-
-from typing import Any, Callable
+from defcmd.terminal import bold, dim, red, inverse, Cursor, raw_mode
+from defcmd.terminal.reader import InputReader, DefaultInputReader
 
 class SelectWidget(Widget):
     
@@ -14,11 +13,13 @@ class SelectWidget(Widget):
         separator: str = ": ",
         options: list[str],
         default: str | None = None,
+        input_reader: InputReader | None = None,   
     ):
         self._prompt = prompt
         self._separator = separator
         self._options = options
         self._default = default
+        self._input_reader = DefaultInputReader() if input_reader is None else input_reader
         self._value: str | None = None
         self._interacted: bool = False
 
@@ -40,7 +41,7 @@ class SelectWidget(Widget):
 
         with raw_mode():
             while True:
-                key = read_keypress()
+                key = self._input_reader.read_keypress()
                 if key == 'up' and self._selected > 0:
                     self._selected -= 1
                     self._rerender_options()
