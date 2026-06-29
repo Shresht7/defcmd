@@ -244,6 +244,38 @@ def test_unknown_nested_command(monkeypatch):
         cli.run(["db", "unknown"])
 
 
+def test_cli_run_with_default_argv(monkeypatch):
+    cli = CLI()
+    calls = []
+
+    @cli.subcmd
+    def status():
+        calls.append("status called")
+
+    monkeypatch.setattr("sys.argv", ["script.py", "status"])
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
+
+    cli.run()
+    assert calls == ["status called"]
+
+
+def test_cli_interactive_invalid_command(monkeypatch, capsys):
+    cli = CLI()
+
+    @cli.subcmd
+    def init(name: str):
+        pass
+
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+    inputs = iter(["nonexistent"])
+    monkeypatch.setattr("builtins.input", lambda *_: next(inputs))
+
+    cli.run([])
+    captured = capsys.readouterr()
+    assert "nonexistent" in captured.out
+    assert "not a valid command" in captured.out
+
+
 def test_group_interactive(monkeypatch):
     cli = CLI()
     calls = []

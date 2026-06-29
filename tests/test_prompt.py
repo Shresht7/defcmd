@@ -194,3 +194,74 @@ def test_pattern_reprompts():
     [param] = inspect_function_signature(f)
     value = prompt(param, input_reader=ScriptedInputReader(values=["abc", "12345", "6789"]))
     assert value == "6789"
+
+
+def test_confirm_default_true():
+    def f(verbose: bool = True):
+        pass
+
+    [param] = inspect_function_signature(f)
+    value = prompt(param, input_reader=ScriptedInputReader(keypresses=["enter"]))
+    assert value is True
+
+
+def test_confirm_default_none():
+    def f(explicit: bool):
+        pass
+
+    [param] = inspect_function_signature(f)
+    value = prompt(param, input_reader=ScriptedInputReader(keypresses=["y"]))
+    assert value is True
+
+
+def test_confirm_cached_value():
+    def f(verbose: bool = False):
+        pass
+
+    [param] = inspect_function_signature(f)
+    reader = ScriptedInputReader(keypresses=["y"])
+    widget = _auto_widget(param, reader)
+    val1 = widget.value
+    val2 = widget.value
+    assert val1 is True
+    assert val2 is True
+
+
+def test_select_down_then_up_then_enter():
+    def f(env: Literal["dev", "staging", "prod"] = "dev"):
+        pass
+
+    [param] = inspect_function_signature(f)
+    value = prompt(param, input_reader=ScriptedInputReader(keypresses=["down", "up", "enter"]))
+    assert value == "dev"
+
+
+def test_select_empty_prompt():
+    from defcmd.widgets.select import SelectWidget
+
+    widget = SelectWidget(prompt="", options=["a", "b"], input_reader=ScriptedInputReader(keypresses=["enter"]))
+    assert widget.value == "a"
+
+
+def test_select_default_not_in_options():
+    from defcmd.widgets.select import SelectWidget
+
+    with pytest.raises(ValueError, match="not in the list of options"):
+        SelectWidget(options=["a", "b"], default="c")
+
+
+def test_text_no_converter():
+    def f(name: str):
+        pass
+
+    from defcmd.introspect import inspect_function_signature
+    from defcmd.widgets import prompt
+
+    [param] = inspect_function_signature(f)
+    reader = ScriptedInputReader(values=["Alice"])
+    widget = _auto_widget(param, reader)
+    widget._converter = None
+    assert widget.value == "Alice"
+
+
+from defcmd.widgets import auto_widget as _auto_widget
