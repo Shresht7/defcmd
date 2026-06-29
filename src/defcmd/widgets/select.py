@@ -64,7 +64,7 @@ class SelectWidget(Widget):
                 elif key == 'down' and self._selected < len(self._options) - 1:
                     self._selected += 1
                     self._rerender_options()
-                elif key == 'enter':
+                elif key == 'enter' or key == 'space':
                     self._value = self._options[self._selected]
                     break
         
