@@ -51,6 +51,12 @@ class SelectWidget(Widget):
 
     @property
     def value(self) -> str:
+        if not self._interacted:
+            self._interacted = True
+            return self.prompt()
+        return self._value or self.prompt()
+
+    def prompt(self) -> str:
         print(self.render(), flush=True)
 
         self._render_options()
@@ -76,6 +82,7 @@ class SelectWidget(Widget):
         print(self.render_done(), flush=True)
 
         return self._value
+
 
     def _render_options(self) -> None:
         for i, option in enumerate(self._options):

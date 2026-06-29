@@ -11,6 +11,7 @@ class Widget(ABC):
         """Render the widget as a string for display in the terminal"""
         pass
 
+    @abstractmethod
     def prompt(self) -> Any:
         """Prompt the user for input on a loop and return the value"""
         pass
