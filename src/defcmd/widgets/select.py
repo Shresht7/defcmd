@@ -28,6 +28,7 @@ class SelectWidget(Widget):
         self._value: str | None = None
         self._selection_marker = selection_marker
         self._interacted: bool = False
+        self._hint: str = f"  {f'{green('↑↓')}{dim(' to move, ')}{green('enter')}{dim('/')}{green('space')}{dim(' to select')}'}"
 
         try:
             self._selected: int = 0 if default is None else options.index(default)
@@ -60,6 +61,8 @@ class SelectWidget(Widget):
         print(self.render(), flush=True)
 
         self._render_options()
+        if self._hint:
+            print(self._hint, flush=True)
 
         with raw_mode():
             while self._value is None:
@@ -92,11 +95,13 @@ class SelectWidget(Widget):
             print(f"{dim('|')} {marker} {display}")
 
     def _rerender_options(self):
-        # Move the cursor up to the first option
-        print(Cursor.up(len(self._options)) + Cursor.clear_to_screen_end(), end="")
+        lines = len(self._options) + (1 if self._hint else 0)
+        print(Cursor.up(lines) + Cursor.clear_to_screen_end(), end="")
         self._render_options()
+        if self._hint:
+            print(self._hint, flush=True)
 
     def _clear_options(self) -> None:
-        # Move the cursor up to the first option and clear the lines
-        print(Cursor.up(len(self._options)) + Cursor.clear_to_screen_end(), end="")
+        lines = len(self._options) + (1 if self._hint else 0)
+        print(Cursor.up(lines) + Cursor.clear_to_screen_end(), end="")
 
