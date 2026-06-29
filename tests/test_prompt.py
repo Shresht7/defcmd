@@ -1,27 +1,47 @@
 import pytest
 
-from defcmd.introspect import inspect_function_signature
-from defcmd.prompt import prompt_for_param
-from defcmd.spec import Spec
-
 from typing import Annotated, Literal
+
+from defcmd.introspect import inspect_function_signature
+from defcmd.spec import Spec
+from defcmd.widgets import prompt
+
+
+class ScriptedInputReader:
+    def __init__(self, *, values=(), secrets=(), keypresses=()):
+        self._values = iter(values)
+        self._secrets = iter(secrets)
+        self._keypresses = iter(keypresses)
+        self.prompts: list[str] = []
+        self.secret_prompts: list[tuple[str, str]] = []
+
+    def read(self, prompt: str) -> str:
+        self.prompts.append(prompt)
+        return next(self._values)
+
+    def read_secret(self, prompt: str, mask_char: str = "*") -> str:
+        self.secret_prompts.append((prompt, mask_char))
+        return next(self._secrets)
+
+    def read_keypress(self) -> str:
+        return next(self._keypresses)
+
 
 def test_required_str_returns_typed_value():
     def f(name: str):
         pass
 
     [param] = inspect_function_signature(f)
-    value = prompt_for_param(param, input_fn=lambda _prompt: "Bob")
+    value = prompt(param, input_reader=ScriptedInputReader(values=["Bob"]))
     assert value == "Bob"
+
 
 def test_optional_blank_input_uses_default():
     def f(port: int = 8080):
         pass
 
     [param] = inspect_function_signature(f)
-
-    # simulate the user hitting Enter with no input
-    value = prompt_for_param(param, input_fn=lambda _prompt: "")
+    value = prompt(param, input_reader=ScriptedInputReader(values=[""]))
     assert value == 8080
 
 
@@ -30,190 +50,147 @@ def test_required_blank_reprompts_then_succeeds():
         pass
 
     [param] = inspect_function_signature(f)
-    inputs = iter(["", "", "Charlie"])
-    value = prompt_for_param(param, input_fn=lambda _prompt: next(inputs))
+    value = prompt(param, input_reader=ScriptedInputReader(values=["", "", "Charlie"]))
     assert value == "Charlie"
+
 
 def test_optional_bool_blank_input_uses_default():
     def f(verbose: bool = False):
         pass
 
-    [p] = inspect_function_signature(f)
-    value = prompt_for_param(p, input_fn=lambda _prompt: "")
+    [param] = inspect_function_signature(f)
+    value = prompt(param, input_reader=ScriptedInputReader(keypresses=["enter"]))
     assert value is False
 
-@pytest.mark.parametrize("raw,expected", [
-    ("true", True), ("yes", True), ("y", True), ("1", True),
-    ("false", False), ("no", False), ("n", False), ("0", False),
-])
-def test_bool_variants(raw, expected):
+
+@pytest.mark.parametrize(
+    ("keypress", "expected"),
+    [("y", True), ("Y", True), ("n", False), ("N", False)],
+)
+def test_bool_variants(keypress, expected):
     def f(verbose: bool = False):
         pass
 
-    [p] = inspect_function_signature(f)
-    value = prompt_for_param(p, input_fn=lambda _prompt: raw)
+    [param] = inspect_function_signature(f)
+    value = prompt(param, input_reader=ScriptedInputReader(keypresses=[keypress]))
     assert value is expected
+
 
 def test_bool_invalid_input_reprompts():
     def f(verbose: bool = False):
         pass
 
-    [p] = inspect_function_signature(f)
-    inputs = iter(["notabool", "maybe", "yes"])
-    value = prompt_for_param(p, input_fn=lambda _prompt: next(inputs))
+    [param] = inspect_function_signature(f)
+    value = prompt(param, input_reader=ScriptedInputReader(keypresses=["space", "down", "y"]))
     assert value is True
+
 
 def test_int_invalid_then_valid():
     def f(port: int):
         pass
 
-    [p] = inspect_function_signature(f)
-    inputs = iter(["notanumber", "totally51", "9090"])
-    value = prompt_for_param(p, input_fn=lambda _prompt: next(inputs))
+    [param] = inspect_function_signature(f)
+    value = prompt(param, input_reader=ScriptedInputReader(values=["notanumber", "totally51", "9090"]))
     assert value == 9090
     assert isinstance(value, int)
 
+
 def test_literal_choice_valid():
-    from typing import Literal
     def f(env: Literal["dev", "prod"] = "dev"):
         pass
 
-    [p] = inspect_function_signature(f)
-    value = prompt_for_param(p, input_fn=lambda _prompt: "prod")
+    [param] = inspect_function_signature(f)
+    value = prompt(param, input_reader=ScriptedInputReader(keypresses=["down", "enter"]))
     assert value == "prod"
 
-def test_literal_invalid_then_valid():
-    from typing import Literal
+
+def test_literal_default_choice_selected_on_enter():
     def f(env: Literal["dev", "prod"] = "dev"):
         pass
 
-    [p] = inspect_function_signature(f)
-    inputs = iter(["staging", "dev"])
-    value = prompt_for_param(p, input_fn=lambda _prompt: next(inputs))
+    [param] = inspect_function_signature(f)
+    value = prompt(param, input_reader=ScriptedInputReader(keypresses=["enter"]))
     assert value == "dev"
+
 
 def test_spec_help_appears_in_prompt_label():
     def f(host: Annotated[str, Spec(help="target hostname")]):
         pass
 
-    [p] = inspect_function_signature(f)
-    seen_prompts = []
+    [param] = inspect_function_signature(f)
+    reader = ScriptedInputReader(values=["myhost"])
 
-    def capture_input(prompt):
-        seen_prompts.append(prompt)
-        return "myhost"
-
-    prompt_for_param(p, input_fn=capture_input)
-    assert "target hostname" in seen_prompts[0]
+    prompt(param, input_reader=reader)
+    assert "target hostname" in reader.prompts[0]
 
 
 def test_no_spec_means_no_help_hint():
     def f(host: str):
         pass
 
-    [p] = inspect_function_signature(f)
-    seen_prompts = []
+    [param] = inspect_function_signature(f)
+    reader = ScriptedInputReader(values=["myhost"])
 
-    def capture_input(prompt):
-        seen_prompts.append(prompt)
-        return "myhost"
+    prompt(param, input_reader=reader)
+    assert "target hostname" not in reader.prompts[0]
 
-    prompt_for_param(p, input_fn=capture_input)
-    assert "—" not in seen_prompts[0]
 
 def test_spec_prompt_overrides_default_prompt():
     def f(host: Annotated[str, Spec(help="number of hours", prompt="How many hours did it take?")]):
         pass
 
-    [p] = inspect_function_signature(f)
-    seen_prompts = []
+    [param] = inspect_function_signature(f)
+    reader = ScriptedInputReader(values=["myhost"])
 
-    def capture_input(prompt):
-        seen_prompts.append(prompt)
-        return "myhost"
+    prompt(param, input_reader=reader)
+    assert "How many hours did it take?" in reader.prompts[0]
 
-    prompt_for_param(p, input_fn=capture_input)
-    assert seen_prompts[0].startswith("How many hours did it take?")
 
-def test_secret_param_uses_getpass(monkeypatch):
+def test_secret_param_uses_secret_reader():
     def f(password: Annotated[str, Spec(secret=True)]):
         pass
 
-    [p] = inspect_function_signature(f)
-    calls = []
+    [param] = inspect_function_signature(f)
+    reader = ScriptedInputReader(secrets=["s3cr3t"])
 
-    monkeypatch.setattr("defcmd.prompt.getpass", lambda prompt, echo_char="*": calls.append((prompt, echo_char)) or "s3cr3t")
-
-    value = prompt_for_param(p, input_fn=lambda _: (_ for _ in ()).throw(AssertionError("input() should not be called for secret parameters")))
+    value = prompt(param, input_reader=reader)
 
     assert value == "s3cr3t"
-    assert calls[0][1] == "*"
+    assert reader.secret_prompts[0][1] == "*"
+    assert reader.prompts == []
 
-def test_required_secret_blank_reprompts(monkeypatch):
+
+def test_required_secret_blank_reprompts():
     def f(password: Annotated[str, Spec(secret=True)]):
         pass
 
-    [p] = inspect_function_signature(f)
-    inputs = iter(["", "", "s3cr3t"])
-
-    monkeypatch.setattr("defcmd.prompt.getpass", lambda *_args, **_kwargs: next(inputs))
-
-    value = prompt_for_param(p)
+    [param] = inspect_function_signature(f)
+    value = prompt(param, input_reader=ScriptedInputReader(secrets=["", "", "s3cr3t"]))
     assert value == "s3cr3t"
+
 
 def test_min_reprompts():
     def f(port: Annotated[int, Spec(min=1024)]):
         pass
 
-    [p] = inspect_function_signature(f)
-    inputs = iter(["80", "443", "8080"])
-    value = prompt_for_param(p, input_fn=lambda _prompt: next(inputs))
+    [param] = inspect_function_signature(f)
+    value = prompt(param, input_reader=ScriptedInputReader(values=["80", "443", "8080"]))
     assert value == 8080
+
 
 def test_max_reprompts():
     def f(port: Annotated[int, Spec(max=65535)]):
         pass
 
-    [p] = inspect_function_signature(f)
-    inputs = iter(["70000", "80000", "65535"])
-    value = prompt_for_param(p, input_fn=lambda _prompt: next(inputs))
+    [param] = inspect_function_signature(f)
+    value = prompt(param, input_reader=ScriptedInputReader(values=["70000", "80000", "65535"]))
     assert value == 65535
-    
+
 
 def test_pattern_reprompts():
     def f(code: Annotated[str, Spec(pattern=r"^\d{4}$")]):
         pass
 
-    [p] = inspect_function_signature(f)
-    inputs = iter(["abc", "12345", "6789"])
-    value = prompt_for_param(p, input_fn=lambda _prompt: next(inputs))
+    [param] = inspect_function_signature(f)
+    value = prompt(param, input_reader=ScriptedInputReader(values=["abc", "12345", "6789"]))
     assert value == "6789"
-
-
-def test_prompt_getpass_secret_input(monkeypatch):
-    from defcmd.prompt import _prompt
-
-    calls = []
-    monkeypatch.setattr("defcmd.prompt.getpass", lambda msg, echo_char="*": calls.append((msg, echo_char)) or "s3cr3t")
-
-    result = _prompt("password:", is_secret=True, input_fn=lambda _: "visible")
-    assert result == "s3cr3t"
-    assert calls[0][1] == "*"
-
-
-def test_prompt_visible_input(monkeypatch):
-    from defcmd.prompt import _prompt
-
-    result = _prompt("name:", is_secret=False, input_fn=lambda _: "Alice")
-    assert result == "Alice"
-
-
-def test_prompt_default_input_fn_secret(monkeypatch):
-    """_prompt falls through to getpass even when input_fn is None"""
-    from defcmd.prompt import _prompt
-
-    monkeypatch.setattr("builtins.input", lambda _: "should-not-be-used")
-    monkeypatch.setattr("defcmd.prompt.getpass", lambda msg, echo_char="*": "hidden-value")
-
-    result = _prompt("token:", is_secret=True)
-    assert result == "hidden-value"

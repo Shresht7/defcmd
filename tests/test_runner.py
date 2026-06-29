@@ -35,8 +35,8 @@ def test_empty_argv_in_real_terminal_runs_wizard(monkeypatch):
 
     monkeypatch.setattr("sys.stdin.isatty", lambda: True)
 
-    inputs = iter(["wizardhost", "9090", "Y"])
-    monkeypatch.setattr("builtins.input", lambda *_: next(inputs))
+    prompted = iter(["wizardhost", 9090, True])
+    monkeypatch.setattr("defcmd.runner.prompt", lambda _param: next(prompted))
 
     deploy.run([])
     assert calls == [("wizardhost", 9090, True)]
