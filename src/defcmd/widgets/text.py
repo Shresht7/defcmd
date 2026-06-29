@@ -77,7 +77,7 @@ class TextInputWidget(Widget):
                     val = self._default
                     break
                 else:
-                    print(red("Error: Value is required. Please enter a value."))
+                    print(red(f"✗ error: value is required"))
                 continue
             
             # If no converter function is provided, return the raw input as-is
@@ -91,7 +91,7 @@ class TextInputWidget(Widget):
                 val = self._converter(raw)
                 break
             except (ValueError, TypeError) as e:
-                print(red(f"Error: {e}"))
+                print(red(f"✗ error: {e}"))
                 continue
 
         # Set the value of the widget to the converted value
