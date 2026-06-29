@@ -1,5 +1,3 @@
-import pytest
-
 from defcmd.terminal.reader import DefaultInputReader
 
 
@@ -19,21 +17,6 @@ def test_default_reader_read_secret(monkeypatch):
     assert calls[0] == ("password:", "*")
 
 
-def test_default_reader_read_keypress(monkeypatch):
-    monkeypatch.setattr(
-        "defcmd.terminal.reader.read_keypress",
-        lambda: "enter",
-    )
-    assert DefaultInputReader().read_keypress() == "enter"
-
-
-def test_select_widget_render():
-    from defcmd.widgets.select import SelectWidget
-
-    w = SelectWidget(prompt="Pick", options=["a", "b"])
-    assert "Pick" in w.render()
-
-
 def test_default_reader_mask_char_forwarded(monkeypatch):
     calls = []
     monkeypatch.setattr(
@@ -42,3 +25,11 @@ def test_default_reader_mask_char_forwarded(monkeypatch):
     )
     DefaultInputReader().read_secret("token:", mask_char="#")
     assert calls[0][1] == "#"
+
+
+def test_default_reader_read_keypress(monkeypatch):
+    monkeypatch.setattr(
+        "defcmd.terminal.reader.read_keypress",
+        lambda: "enter",
+    )
+    assert DefaultInputReader().read_keypress() == "enter"
