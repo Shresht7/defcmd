@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from defcmd.widgets.base import Widget
-from defcmd.terminal import bold, cyan, green, inverse, Cursor, raw_mode
+from defcmd.terminal import bold, cyan, green, magenta, inverse, dim, Cursor, raw_mode
 from defcmd.terminal.reader import InputReader, DefaultInputReader
 
 class SelectWidget(Widget):
@@ -12,6 +12,7 @@ class SelectWidget(Widget):
         *,
         prompt_prefix: str = cyan("? "),
         prompt_suffix: str = ": ",
+        selection_marker: str = magenta("▶"),
         options: list[str],
         default: str | None = None,
         input_reader: InputReader | None = None,   
@@ -23,6 +24,7 @@ class SelectWidget(Widget):
         self._default = default
         self._input_reader = DefaultInputReader() if input_reader is None else input_reader
         self._value: str | None = None
+        self._selection_marker = selection_marker
         self._interacted: bool = False
 
         try:
@@ -69,9 +71,10 @@ class SelectWidget(Widget):
 
     def _render_options(self) -> None:
         for i, option in enumerate(self._options):
-            marker = ">" if i == self._selected else " "
-            display = inverse(option) if i == self._selected else option
-            print(f"{marker} {display}")
+            marker = self._selection_marker if i == self._selected else " "
+            option_str = " " + option + " "
+            display = inverse(option_str) if i == self._selected else option_str
+            print(f"{dim('|')} {marker} {display}")
 
     def _rerender_options(self):
         # Move the cursor up to the first option
