@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from defcmd.widgets.base import Widget
-from defcmd.terminal import bold, cyan, inverse, Cursor, raw_mode
+from defcmd.terminal import bold, cyan, green, inverse, Cursor, raw_mode
 from defcmd.terminal.reader import InputReader, DefaultInputReader
 
 class SelectWidget(Widget):
@@ -33,6 +33,11 @@ class SelectWidget(Widget):
     def render(self) -> str:
         label = bold(self._prompt) if self._prompt else ""
         return f"{self._prompt_prefix}{label}{self._prompt_suffix}"
+    
+    def render_done(self) -> str:
+        label = bold(self._prompt)
+        checkmark = green("✓")
+        return f"{checkmark} {label}{self._prompt_suffix}{self._value}"
 
     @property
     def value(self) -> str:
@@ -41,7 +46,7 @@ class SelectWidget(Widget):
         self._render_options()
 
         with raw_mode():
-            while True:
+            while self._value is None:
                 key = self._input_reader.read_keypress()
                 if key == 'up' and self._selected > 0:
                     self._selected -= 1
@@ -50,11 +55,16 @@ class SelectWidget(Widget):
                     self._selected += 1
                     self._rerender_options()
                 elif key == 'enter':
+                    self._value = self._options[self._selected]
                     break
         
         self._clear_options()
 
-        self._value = self._options[self._selected]
+        print(Cursor.up(1), flush=True, end="")
+        print(Cursor.clear_to_screen_end(), flush=True, end="")
+
+        print(self.render_done(), flush=True)
+
         return self._value
 
     def _render_options(self) -> None:
