@@ -51,6 +51,8 @@ class TextInputWidget(Widget):
             help_str = dim(f" ({self._help})")
             label_str += f"{help_str}"
         value_str = str(self._value) if self._value is not None else ""
+        if self._secret:
+            value_str = self._secret_char * len(value_str)
         checkmark = green("✓")
         return f"{checkmark} {label_str}{self._prompt_suffix}{value_str}"
 
