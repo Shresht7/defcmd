@@ -1,20 +1,22 @@
 from __future__ import annotations
 
 from defcmd.widgets.base import Widget
-from defcmd.terminal import bold, dim, red
+from defcmd.terminal import bold, dim, red, cyan
 from defcmd.terminal.reader import InputReader, DefaultInputReader
 
 from typing import Any, Callable
 
+# TODO: Change the ? prefix to (done checkmark) when the user has provided input, and change it to (x) when the user has provided invalid input.
 
 class TextInputWidget(Widget):
     """A widget that allows the user to input text"""
 
     def __init__(
             self,
-            prompt: str = "> ",
+            prompt: str,
             *,
-            sep: str = " ",
+            prompt_prefix: str = cyan("? "),
+            prompt_suffix: str = ": ",
             default: Any = None,
             secret: bool = False,
             secret_char: str = "*",
@@ -22,7 +24,8 @@ class TextInputWidget(Widget):
             input_reader: InputReader | None = None,
         ):
         self._prompt = prompt
-        self.sep = sep
+        self._prompt_prefix = prompt_prefix
+        self._prompt_suffix = prompt_suffix
         self._default = default
         self._secret = secret
         self._secret_char = secret_char
@@ -34,8 +37,10 @@ class TextInputWidget(Widget):
     def render(self) -> str:
         """Render the prompt string to display"""
         label_str = bold(self._prompt) if self._prompt else ""
-        default_str = dim(f"[{self._default}]" if self._default is not None else "")
-        return f"{label_str} {default_str}{self.sep}"
+        if self._default is not None:
+            default_str = dim(f"[default: {str(self._default)}]")
+            return f"{self._prompt_prefix}{label_str} {default_str}{self._prompt_suffix}"
+        return f"{self._prompt_prefix}{label_str}{self._prompt_suffix}"
 
     @property
     def value(self) -> Any:
@@ -63,7 +68,7 @@ class TextInputWidget(Widget):
             if raw == "":
                 if self._default is not None:
                     return self._default
-                print(red("Value is required. Please enter a value."))
+                print(red("Error: Value is required. Please enter a value."))
                 continue
             
             # If no converter function is provided, return the raw input as-is
@@ -75,6 +80,6 @@ class TextInputWidget(Widget):
             try:
                 return self._converter(raw)
             except (ValueError, TypeError) as e:
-                print(red(str(e)))
+                print(red(f"Error: {e}"))
                 continue
 

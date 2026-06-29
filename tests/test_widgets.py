@@ -33,9 +33,6 @@ def test_select_widget_render():
     w = SelectWidget(prompt="Pick", options=["a", "b"])
     assert "Pick" in w.render()
 
-    w_empty = SelectWidget(prompt="", options=["a", "b"])
-    assert w_empty.render().strip() == ":"
-
 
 def test_default_reader_mask_char_forwarded(monkeypatch):
     calls = []

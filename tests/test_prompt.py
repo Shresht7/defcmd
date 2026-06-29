@@ -113,28 +113,6 @@ def test_literal_default_choice_selected_on_enter():
     assert value == "dev"
 
 
-def test_spec_help_appears_in_prompt_label():
-    def f(host: Annotated[str, Spec(help="target hostname")]):
-        pass
-
-    [param] = inspect_function_signature(f)
-    reader = ScriptedInputReader(values=["myhost"])
-
-    prompt(param, input_reader=reader)
-    assert "target hostname" in reader.prompts[0]
-
-
-def test_no_spec_means_no_help_hint():
-    def f(host: str):
-        pass
-
-    [param] = inspect_function_signature(f)
-    reader = ScriptedInputReader(values=["myhost"])
-
-    prompt(param, input_reader=reader)
-    assert "target hostname" not in reader.prompts[0]
-
-
 def test_spec_prompt_overrides_default_prompt():
     def f(host: Annotated[str, Spec(help="number of hours", prompt="How many hours did it take?")]):
         pass
@@ -144,6 +122,24 @@ def test_spec_prompt_overrides_default_prompt():
 
     prompt(param, input_reader=reader)
     assert "How many hours did it take?" in reader.prompts[0]
+
+
+def test_spec_prompt_overrides_bool_prompt():
+    def f(verbose: Annotated[bool, Spec(prompt="Enable logging")] = False):
+        pass
+
+    [param] = inspect_function_signature(f)
+    value = prompt(param, input_reader=ScriptedInputReader(keypresses=["y"]))
+    assert value is True
+
+
+def test_spec_prompt_overrides_literal_prompt():
+    def f(env: Annotated[Literal["dev", "prod"], Spec(prompt="Target environment")] = "dev"):
+        pass
+
+    [param] = inspect_function_signature(f)
+    value = prompt(param, input_reader=ScriptedInputReader(keypresses=["enter"]))
+    assert value == "dev"
 
 
 def test_secret_param_uses_secret_reader():

@@ -1,22 +1,24 @@
 from __future__ import annotations
 
 from defcmd.widgets.base import Widget
-from defcmd.terminal import bold, dim, red, inverse, Cursor, raw_mode
+from defcmd.terminal import bold, cyan, inverse, Cursor, raw_mode
 from defcmd.terminal.reader import InputReader, DefaultInputReader
 
 class SelectWidget(Widget):
     
     def __init__(
         self,
-        prompt: str = "Select an option",
+        prompt: str | None = None,
         *,
-        separator: str = ": ",
+        prompt_prefix: str = cyan("? "),
+        prompt_suffix: str = ": ",
         options: list[str],
         default: str | None = None,
         input_reader: InputReader | None = None,   
     ):
-        self._prompt = prompt
-        self._separator = separator
+        self._prompt = prompt or "select an option"
+        self._prompt_prefix = prompt_prefix
+        self._prompt_suffix = prompt_suffix
         self._options = options
         self._default = default
         self._input_reader = DefaultInputReader() if input_reader is None else input_reader
@@ -30,12 +32,11 @@ class SelectWidget(Widget):
 
     def render(self) -> str:
         label = bold(self._prompt) if self._prompt else ""
-        return f"{label} {self._separator}"
+        return f"{self._prompt_prefix}{label}{self._prompt_suffix}"
 
     @property
     def value(self) -> str:
-        prompt_str = bold(self._prompt) if self._prompt else ""
-        print(prompt_str, flush=True)
+        print(self.render(), flush=True)
 
         self._render_options()
 
