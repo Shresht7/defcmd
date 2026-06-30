@@ -5,6 +5,24 @@ from defcmd.terminal.reader import InputReader, DefaultInputReader
 _UNSET = object()  # Sentinel value to indicate that no default has been set
 
 class ConfirmWidget(Widget):
+    """
+    A widget that prompts the user for a yes/no confirmation
+
+    Attributes:
+        prompt (str): The prompt message to display to the user.
+        prompt_prefix (str): The prefix to display before the prompt message.
+        prompt_suffix (str): The suffix to display after the prompt message.
+        help (str): Optional help text to display alongside the prompt.
+        default (bool): The default value to use if the user presses enter without providing input.
+        input_reader (InputReader): An object responsible for reading user input from the terminal. Used to facilitate testing and customization of input handling. Defaults to DefaultInputReader if not provided.
+
+    Methods:
+        `render()`: Renders the widget as a string for display in the terminal.
+        `render_done()`: Renders the final state of the widget after user interaction.
+        `prompt()`: Prompts the user for input on a loop and returns the value.
+        `value()`: Returns the current value of the widget. If the widget has not been interacted with yet, this will prompt the user for input. Otherwise, it will return the cached value.    
+    """
+
     def __init__(
             self,
             prompt: str | None = None,
@@ -23,15 +41,17 @@ class ConfirmWidget(Widget):
         self._value = _UNSET
         self._value_str = ""
         self._input_reader = DefaultInputReader() if input_reader is None else input_reader 
-        self._interacted: bool = False
+
 
     def render(self) -> str:
+        """Render the widget as a string for display in the terminal"""
         label = bold(self._prompt) if self._prompt else ""
-        help_str = dim(f" ({self._help})") if self._help else ""
-        default_str = self._get_default_str()
-        return f"{self._prompt_prefix}{label}{help_str} {default_str}{self._prompt_suffix}"
+        help = dim(f" ({self._help})") if self._help else ""
+        default = self._get_default_str()
+        return f"{self._prompt_prefix}{label}{help} {default}{self._prompt_suffix}"
 
     def _get_default_str(self) -> str:
+        """Helper method to get the default value string representation of yes/no options based on the default value"""
         res = ""
         if self._default is True:
             res = "[Y/n]"
@@ -42,14 +62,17 @@ class ConfirmWidget(Widget):
         return dim(res)
 
     def render_done(self) -> str:
+        """Render the final state of the widget after user interaction"""
         label = bold(self._prompt) if self._prompt else ""
-        checkmark = green("✓")
-        help_str = dim(f" ({self._help})") if self._help else ""
+        help = dim(f" ({self._help})") if self._help else ""
         if self._value_str == "":
             self._value_str = "yes" if self._default is True else "no" if self._default is False else ""
-        return f"{checkmark} {label}{help_str}{self._prompt_suffix}{self._value_str}"
+        checkmark = green("✓")
+        return f"{checkmark} {label}{help}{self._prompt_suffix}{self._value_str}"
+
 
     def prompt(self) -> bool:
+        """Prompt the user for input on a loop and return the value"""
 
         # Save the current cursor position
         print(Cursor.save_position(), flush=True, end="")
@@ -62,6 +85,7 @@ class ConfirmWidget(Widget):
             while self._value is _UNSET:
                 key = self._input_reader.read_keypress()
 
+                # Handle the keypresses
                 if key == "enter":
                     if self._default is not None:
                         self._value = self._default
@@ -81,10 +105,12 @@ class ConfirmWidget(Widget):
         # Print the final form of the widget
         print(self.render_done(), flush=True)
 
+        # Return the value as a boolean
         return bool(self._value)
 
     @property
     def value(self) -> bool:
+        """Get the current value of the widget, prompting the user if necessary"""
         if self._value is not _UNSET:
-            return bool(self._value)
-        return self.prompt()
+            return bool(self._value)    # If the value has already been set, return it as a boolean
+        return self.prompt()            # Otherwise, prompt the user for input and return the result as a boolean
