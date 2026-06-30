@@ -7,10 +7,10 @@ from __future__ import annotations
 import sys
 import argparse
 
-from defcmd.argparser import build_parser
-from defcmd.introspect import inspect_function_signature
-from defcmd.interactive import is_interactive
-from defcmd.widgets import prompt, SelectWidget
+from .argparser import build_parser
+from .introspect import inspect_function_signature
+from .interactive import is_interactive
+from .widgets import prompt, SelectWidget
 
 from typing import Callable, TypeAlias
 

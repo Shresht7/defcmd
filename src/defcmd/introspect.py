@@ -8,7 +8,7 @@ import inspect
 from dataclasses import dataclass
 from typing import Annotated, Any, get_args, get_origin
 
-from defcmd.spec import Spec
+from .spec import Spec
 
 class UnsupportedSignatureError(TypeError):
     """Raised when a function signature cannot be represented as a command-line interface"""

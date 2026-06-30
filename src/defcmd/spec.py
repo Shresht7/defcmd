@@ -4,7 +4,6 @@ Defines the Spec class, which represents the specification of a command, includi
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from typing import Callable
 

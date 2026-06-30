@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from defcmd.introspect import Parameter
-from defcmd.spec import Spec
+from .introspect import Parameter
+from .spec import Spec
 
 import re
 from typing import get_args, get_origin, Literal

@@ -7,9 +7,9 @@ and returns an `ArgumentParser` that can be used to parse command-line arguments
 from __future__ import annotations
 
 import argparse
-from .introspect import Parameter
 
-from defcmd.convert import ValidationError, parse_value
+from .introspect import Parameter
+from .convert import ValidationError, parse_value
 
 from typing import get_origin, get_args, Literal
 
