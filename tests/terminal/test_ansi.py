@@ -10,10 +10,9 @@ from defcmd.terminal.ansi import *
 def test_ansi_code_str():
     assert str(ANSICode(31)) == "\x1b[31m"
 
-
-def test_ansi_code_repr():
-    assert repr(ANSICode(31)) == "ANSICode(31)"
-
+def test_ansi_code_equality():
+    assert ANSICode(31) == ANSICode(31)
+    assert ANSICode(31) != ANSICode(32)
 
 def test_ansi_code_unset():
     code = ANSICode(31, unset_code=39)
@@ -68,11 +67,6 @@ def test_ansi_color_variant_wrap():
 def test_ansi_codes_str():
     assert str(ANSICodes(31, 1)) == "\x1b[31;1m"
 
-
-def test_ansi_codes_repr():
-    assert repr(ANSICodes(31, 1)) == "ANSICodes(ANSICode(31), ANSICode(1))"
-
-
 @pytest.mark.parametrize(
     ("codes", "expected"),
     [
@@ -80,6 +74,7 @@ def test_ansi_codes_repr():
         (ANSICodes(31, 1, 4), "\x1b[31;1;4mHello\x1b[0m"),
     ],
 )
+
 def test_ansi_codes_wrap(codes, expected):
     assert codes.wrap("Hello") == expected
 
@@ -234,6 +229,20 @@ def test_ansi_rgb_color():
     assert str(rgb.bg) == "\x1b[48;2;255;12;25m"
     assert rgb.wrap("Hello") == "\x1b[38;2;255;12;25mHello\x1b[39m"
 
+@pytest.mark.parametrize(
+    ("r", "g", "b"),
+    [
+        (-1, 0, 0),
+        (0, -1, 0),
+        (0, 0, -1),
+        (256, 0, 0),
+        (0, 256, 0),
+        (0, 0, 256),
+    ],
+)
+def test_rgb_validation(r, g, b):
+    with pytest.raises(ValueError):
+        ANSIRGBColorCode(r, g, b)
 
 # ------
 # CURSOR

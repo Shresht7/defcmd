@@ -13,7 +13,7 @@ The module supports:
 - cursor movement and screen manipulation
 """
 
-from typing import Any
+from dataclasses import dataclass
 
 # ANSI escape sequences are used to control text formatting, color, and other output options in terminal emulators.
 ESCAPE = "\x1b"
@@ -35,18 +35,15 @@ DELIMITER = ";"
 # ANSI CODE
 # ---------
 
+@dataclass(frozen=True, slots=True)
 class ANSICode:
     """Represents a single ANSI escape code for text formatting or color in terminal output."""
 
-    def __init__(self, code: int, unset_code: int = 0):
-        self.code = code
-        self.unset_code = unset_code
+    code: int
+    unset_code: int = 0
 
     def __str__(self) -> str:
         return f"{CSI}{self.code}{CSI_TERMINATOR}"
-
-    def __repr__(self) -> str:
-        return f"ANSICode({self.code})"
     
     @property
     def unset(self) -> str:
@@ -57,21 +54,21 @@ class ANSICode:
         """Wrap the given text with the ANSI escape code to apply formatting."""
         return f"{self}{text}{self.unset}"
     
-    def __call__(self, *args: object, **kwds: Any) -> str:
+    def __call__(self, *args: object) -> str:
         return self.wrap(" ".join(str(arg) for arg in args))
 
 # ---------------
 # ANSI COLOR CODE
 # ---------------
 
+@dataclass(frozen=True, slots=True)
 class ANSIColorCode(ANSICode):
     """
     Represents an ANSI color code for text color in terminal output.
     Comes with properties to get the background color and bright variants of the color code.
     """
     
-    def __init__(self, code: int, unset_code: int = 39):
-        super().__init__(code, unset_code)
+    unset_code: int = 39
 
     @property
     def bg(self) -> ANSIColorCode:
@@ -83,7 +80,8 @@ class ANSIColorCode(ANSICode):
         """Return a new ANSIColorCode instance with the bright variant of the current code."""
         return ANSIColorCode(self.code + 60, unset_code=self.unset_code + 60)
 
-class ANSIRGBColorCode(ANSICode):
+@dataclass(frozen=True, slots=True)
+class ANSIRGBColorCode:
     """
     Represents an ANSI RGB color code for text color in terminal output.
     Comes with properties to get the background color and bright variants of the color code.
@@ -93,14 +91,35 @@ class ANSIRGBColorCode(ANSICode):
     and "\x1b[48;2;<r>;<g>;<b>m" for background colors.
     """
     
-    def __init__(self, r: int, g: int, b: int, code: int = 38, unset_code: int = 39):
-        self.r = r
-        self.g = g
-        self.b = b
-        super().__init__(code=code, unset_code=unset_code)
+    r: int
+    g: int
+    b: int
+    code: int = 38
+    unset_code: int = 39
+
+    def __post_init__(self) -> None:
+        for name, value in (
+            ("r", self.r),
+            ("g", self.g),
+            ("b", self.b),
+        ):
+            if not 0 <= value <= 255:
+                raise ValueError(f"{name} must be between 0 and 255 (got {value})")
 
     def __str__(self) -> str:
         return f"{CSI}{self.code};2;{self.r};{self.g};{self.b}{CSI_TERMINATOR}"
+
+    @property
+    def unset(self) -> str:
+        """Return the ANSI escape code to unset the current RGB color."""
+        return f"{CSI}{self.unset_code}{CSI_TERMINATOR}"
+
+    def wrap(self, text: str) -> str:
+        """Wrap the given text with the ANSI RGB color code to apply formatting."""
+        return f"{self}{text}{self.unset}"
+
+    def __repr__(self) -> str:
+        return f"ANSIRGBColorCode(r={self.r}, g={self.g}, b={self.b}, code={self.code}, unset_code={self.unset_code})"
 
     @property
     def bg(self) -> ANSIRGBColorCode:
@@ -131,16 +150,17 @@ class ANSICodes:
         """Wrap the given text with the ANSI escape codes to apply formatting."""
         return f"{self}{text}{self.unset}"
     
-    def __call__(self, *args: Any, **kwds: Any) -> Any:
+    def __call__(self, *args: object) -> str:
         return self.wrap(" ".join(str(arg) for arg in args))
 
-    def add(self, *codes: ANSICode | int) -> None:
+    def add(self, *codes: ANSICode | int) -> ANSICodes:
         """Add one or more ANSI codes to the current set of codes."""
         for code in codes:
             if isinstance(code, ANSICode):
                 self.codes.append(code)
             else:
                 self.codes.append(ANSICode(code))
+        return self
 
 # -------
 # COMPOSE
