@@ -5,7 +5,26 @@ from defcmd.terminal import bold, cyan, green, magenta, inverse, dim, Cursor, ra
 from defcmd.terminal.reader import InputReader, DefaultInputReader
 
 class SelectWidget(Widget):
-    
+    """
+    A widget that allows the user to select from a list of options.
+
+    Attributes:
+        prompt (str): The prompt message to display to the user.
+        prompt_prefix (str): The prefix to display before the prompt message.
+        prompt_suffix (str): The suffix to display after the prompt message.
+        help (str): Optional help text to display alongside the prompt.
+        selection_marker (str): The marker to display next to the currently selected option.
+        options (list[str]): The list of options to display for selection.
+        default (str): The default value to use if the user presses enter without making a selection.
+        input_reader (InputReader): An object responsible for reading user input from the terminal. Used to facilitate testing and customization of input handling. Defaults to DefaultInputReader if not provided.
+
+    Methods:
+        `render()`: Renders the widget as a string for display in the terminal.
+        `render_done()`: Renders the final state of the widget after user interaction.
+        `prompt()`: Prompts the user for input on a loop and returns the value.
+        `value()`: Returns the current value of the widget. If the widget has not been interacted with yet, this will prompt the user for input. Otherwise, it will return the cached value.
+    """
+
     def __init__(
         self,
         prompt: str | None = None,
@@ -35,38 +54,39 @@ class SelectWidget(Widget):
         except ValueError:
             raise ValueError(f"Default value '{default}' is not in the list of options: {options}")
 
+
     def render(self) -> str:
+        """Render the widget as a string for display in the terminal"""
         label = bold(self._prompt) if self._prompt else ""
         if self._help:
-            help_str = dim(f" ({self._help})")
-            label += f"{help_str}"
+            help = dim(f" ({self._help})")
+            label += f"{help}"
         return f"{self._prompt_prefix}{label}{self._prompt_suffix}"
     
     def render_done(self) -> str:
+        """Render the final state of the widget after user interaction"""
         label = bold(self._prompt)
         if self._help:
-            help_str = dim(f" ({self._help})")
-            label += f"{help_str}"
+            help = dim(f" ({self._help})")
+            label += f"{help}"
         checkmark = green("✓")
         return f"{checkmark} {label}{self._prompt_suffix}{self._value}"
 
-    @property
-    def value(self) -> str:
-        if not self._interacted:
-            self._interacted = True
-            return self.prompt()
-        return self._value or self.prompt()
-
     def prompt(self) -> str:
-        print(self.render(), flush=True)
+        """Prompt the user for input on a loop and return the value"""
 
+        # Print the initial prompt, options and hint
+        print(self.render(), flush=True)
         self._render_options()
         if self._hint:
             print(self._hint, flush=True)
 
+        # Enter raw mode to capture keypresses
         with raw_mode():
             while self._value is None:
                 key = self._input_reader.read_keypress()
+
+                # Handle keypresses for navigation and selection
                 if key == 'up' and self._selected > 0:
                     self._selected -= 1
                     self._rerender_options()
@@ -76,14 +96,18 @@ class SelectWidget(Widget):
                 elif key == 'enter' or key == 'space':
                     self._value = self._options[self._selected]
                     break
-        
+
+        # Clear the options and hint from the terminal after selection
         self._clear_options()
 
+        # Move the cursor up one line and clear the line to remove the prompt and options from the terminal
         print(Cursor.up(1), flush=True, end="")
         print(Cursor.clear_to_screen_end(), flush=True, end="")
 
+        # Print the final form of the widget
         print(self.render_done(), flush=True)
 
+        # Return the value of the widget
         return self._value
 
 
@@ -105,3 +129,10 @@ class SelectWidget(Widget):
         lines = len(self._options) + (1 if self._hint else 0)
         print(Cursor.up(lines) + Cursor.clear_to_screen_end(), end="")
 
+
+    @property
+    def value(self) -> str:
+        if not self._interacted:
+            self._interacted = True
+            return self.prompt()
+        return self._value or self.prompt()
