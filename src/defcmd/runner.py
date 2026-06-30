@@ -105,7 +105,6 @@ class CLI:
             argv = sys.argv[1:]  # Skip the script name and use the rest of the args
 
         # If no arguments are provided and we're in an interactive environment, run the interactive wizard for the CLI
-        # TODO: Implement a more sophisticated interactive mode that allows the user to select a command and then prompts for its parameters
         if is_interactive(argv):
             widget = SelectWidget(
                 prompt="Select a command to run",
