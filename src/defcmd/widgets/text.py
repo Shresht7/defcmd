@@ -7,7 +7,26 @@ from defcmd.terminal.reader import InputReader, DefaultInputReader
 from typing import Any, Callable
 
 class TextInputWidget(Widget):
-    """A widget that allows the user to input text"""
+    """
+    A widget that allows the user to input text
+    
+    Attributes:
+        prompt (str): The prompt message to display to the user.
+        prompt_prefix (str): The prefix to display before the prompt message.
+        prompt_suffix (str): The suffix to display after the prompt message.
+        help (str): Optional help text to display alongside the prompt.
+        default (Any): The default value to use if the user presses enter without providing input.
+        secret (bool): Whether the input should be hidden (e.g., for passwords).
+        secret_char (str): The character to display when the input is hidden.
+        converter (Callable[[str], Any]): A function to convert the raw input string to the desired type.
+        input_reader (InputReader): An object responsible for reading user input from the terminal. Used to facilitate testing and customization of input handling. Defaults to DefaultInputReader if not provided.
+
+    Methods:
+        `render()`: Renders the widget as a string for display in the terminal.
+        `render_done()`: Renders the final state of the widget after user interaction.
+        `prompt()`: Prompts the user for input on a loop and returns the value.
+        `value()`: Returns the current value of the widget. If the widget has not been interacted with yet, this will prompt the user for input. Otherwise, it will return the cached value
+    """
 
     def __init__(
             self,
@@ -35,40 +54,43 @@ class TextInputWidget(Widget):
         self._interacted: bool = False
 
     def render(self) -> str:
-        """Render the prompt string to display"""
-        label_str = bold(self._prompt) if self._prompt else ""
+        """Render the widget as a string for display in the terminal"""
+        label = bold(self._prompt) if self._prompt else ""
         if self._help:
-            help_str = dim(f" ({self._help})")
-            label_str += f"{help_str}"
+            help = dim(f" ({self._help})")
+            label += f"{help}"
         if self._default is not None:
-            default_str = dim(f"[default: {str(self._default)}]")
-            label_str += f" {default_str}"
-        return f"{self._prompt_prefix}{label_str}{self._prompt_suffix}"
+            default = dim(f"[default: {str(self._default)}]")
+            label += f" {default}"
+        return f"{self._prompt_prefix}{label}{self._prompt_suffix}"
 
     def render_done(self) -> str:
-        label_str = bold(self._prompt) if self._prompt else ""
+        """Render the final state of the widget after user interaction"""
+        label = bold(self._prompt) if self._prompt else ""
         if self._help:
-            help_str = dim(f" ({self._help})")
-            label_str += f"{help_str}"
-        value_str = str(self._value) if self._value is not None else ""
+            help = dim(f" ({self._help})")
+            label += f"{help}"
+        value = str(self._value) if self._value is not None else ""
         if self._secret:
-            value_str = self._secret_char * len(value_str)
+            value = self._secret_char * len(value)
         checkmark = green("✓")
-        return f"{checkmark} {label_str}{self._prompt_suffix}{value_str}"
+        return f"{checkmark} {label}{self._prompt_suffix}{value}"
 
 
     def prompt(self) -> Any:
-        """Prompt the user for input until valid input is received"""
+        """Prompt the user for input on a loop and return the value"""
         
-        prompt_str = self.render()
+        prompt = self.render()
         val = None
+
+        # Loop until we get valid input from the user
         while val is None:
 
             # Read the raw input from the user
             if self._secret:
-                raw = self._input_reader.read_secret(prompt_str, mask_char=self._secret_char).strip()
+                raw = self._input_reader.read_secret(prompt, mask_char=self._secret_char).strip()
             else:
-                raw = self._input_reader.read(prompt_str).strip()
+                raw = self._input_reader.read(prompt).strip()
 
             # If the user provides no input and a default value is set, return the default value
             # Otherwise, prompt the user again for input until valid input is received            
@@ -104,6 +126,7 @@ class TextInputWidget(Widget):
         # Print the final form of the widget
         print(self.render_done(), flush=True)
 
+        # Return the value of the widget
         return self._value
 
     @property
