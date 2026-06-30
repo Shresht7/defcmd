@@ -1,5 +1,13 @@
 """
-TODO: Public API. @cmd decorator that turns a function into a runnable command.
+Command execution and CLI composition.
+
+This module provides the public API for building command-line applications from Python functions.
+
+It defines the `@cmd` decorator for exposing a single function as a command,
+the `Cmd` class for executing an individual command, and the `CLI` class for
+composing multiple commands into a hierarchical command-line interface.
+
+Commands can be executed from command-line arguments or, when appropriate, through an interactive prompting workflow.
 """
 
 from __future__ import annotations
@@ -7,13 +15,14 @@ from __future__ import annotations
 import sys
 import argparse
 
-from defcmd.argparser import build_parser
-from defcmd.introspect import inspect_function_signature
-from defcmd.interactive import is_interactive
-from defcmd.widgets import prompt, SelectWidget
+from .argparser import build_parser
+from .introspect import inspect_function_signature
+from .interactive import is_interactive
+from .widgets import prompt, SelectWidget
 
 from typing import Callable, TypeAlias
 
+# CAUTION: argparse does not expose a public type for subparser collections
 ArgSubparsers: TypeAlias = argparse._SubParsersAction  # Type alias for subparsers in argparse
 
 # Decorator to turn a function into a Cmd instance

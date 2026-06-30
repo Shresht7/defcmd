@@ -1,17 +1,23 @@
 """
-This module contains the logic for building an `argparse.ArgumentParser` based on the list of `Parameter` objects extracted from a function signature.
-It defines a single function, `build_parser`, which takes a list of `Parameter` objects
-and returns an `ArgumentParser` that can be used to parse command-line arguments corresponding to those parameters.
+Build `argparse` parsers from extracted command parameters.
+
+This module converts `Parameter` objects produced by `introspect` into an `argparse.ArgumentParser`.
+It maps Python parameter metadata onto argparse constructs such as positional arguments, optional flags,
+boolean switches, choices, defaults, and type conversion.
+
+Value conversion and validation are delegated to `convert.parse_value`,
+allowing command-line arguments to be parsed according to the original function signature and any attached `Spec` constraints.
 """
 
 from __future__ import annotations
 
 import argparse
-from .introspect import Parameter
 
-from defcmd.convert import ValidationError, parse_value
+from .introspect import Parameter
+from .convert import ValidationError, parse_value
 
 from typing import get_origin, get_args, Literal
+from collections.abc import Callable
 
 def build_parser(params: list[Parameter], description: str | None = None, parser: argparse.ArgumentParser | None = None) -> argparse.ArgumentParser:
     """Build an `argparse.ArgumentParser` based on the list of `Parameter` objects extracted from a function signature"""
@@ -60,7 +66,7 @@ def build_parser(params: list[Parameter], description: str | None = None, parser
 # HELPER FUNCTIONS
 # ----------------
 
-def _make_type_converter(param: Parameter):
+def _make_type_converter(param: Parameter) -> Callable[[str], object]:
     """
     Create a type converter function for a given parameter that will be used by argparse to convert
     the raw string input into the expected type and validate it against any Spec constraints

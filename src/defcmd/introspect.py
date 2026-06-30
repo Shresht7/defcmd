@@ -1,5 +1,15 @@
 """
 Extract command-line interface parameters from a function signature
+
+This module converts Python function signatures into a structured representation
+that can be consumed by the command parser, interactive prompting system, and help generator.
+
+Each function parameter is represented as a `Parameter` object containing
+its name, type annotation, default value, parameter kind,
+and any additional metadata provided through `typing.Annotated` and `Spec`.
+
+Function signatures that cannot be represented as command-line interfaces,
+such as those containing `*args` or `**kwargs`, raise `UnsupportedSignatureError`.
 """
 
 from __future__ import annotations
@@ -7,8 +17,9 @@ from __future__ import annotations
 import inspect
 from dataclasses import dataclass
 from typing import Annotated, Any, get_args, get_origin
+from collections.abc import Callable
 
-from defcmd.spec import Spec
+from .spec import Spec
 
 class UnsupportedSignatureError(TypeError):
     """Raised when a function signature cannot be represented as a command-line interface"""
@@ -24,7 +35,7 @@ class Parameter:
     kind: inspect._ParameterKind    # kind of the parameter (positional, keyword, var-positional, var-keyword)
     spec: Spec | None = None        # optional specifications for the parameter, such as help text
 
-def inspect_function_signature(fn) -> list[Parameter]:
+def inspect_function_signature(fn: Callable[..., Any]) -> list[Parameter]:
     """Extract parameters from a function signature and return a list of Parameter objects"""
     params = []
 

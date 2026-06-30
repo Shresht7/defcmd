@@ -1,10 +1,21 @@
 """
 Defines the Spec class, which represents the specification of a command, including its help text and other specifications.
+
+This module defines the `Spec` dataclass, which stores metadata describing how a command parameter should be presented and validated.
+
+A specification can provide:
+- help text for generated documentation
+- a short option name (for example, `-f`)
+- prompt configuration for interactive input
+- secret input handling
+- validation constraints such as minimum and maximum values,
+  regular expression patterns, and custom validation functions
+
+`Spec` instances are attached to command parameters and are consumed by the command parser, help generator, and interactive prompting system.
 """
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from typing import Callable
 
