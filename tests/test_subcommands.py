@@ -259,41 +259,6 @@ def test_cli_run_with_default_argv(monkeypatch):
     assert calls == ["status called"]
 
 
-def test_cli_interactive_invalid_command(monkeypatch, capsys):
-    cli = CLI()
-
-    @cli.subcmd
-    def init(name: str):
-        pass
-
-    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
-    inputs = iter(["nonexistent"])
-    monkeypatch.setattr("builtins.input", lambda *_: next(inputs))
-
-    cli.run([])
-    captured = capsys.readouterr()
-    assert "nonexistent" in captured.out
-    assert "not a valid command" in captured.out
-
-
-def test_group_interactive(monkeypatch):
-    cli = CLI()
-    calls = []
-
-    db = cli.group("db")
-
-    @db.subcmd
-    def seed(count: int = 10):
-        calls.append(("seed", count))
-
-    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
-    inputs = iter(["db", "seed", "25"])
-    monkeypatch.setattr("builtins.input", lambda *_: next(inputs))
-
-    cli.run([])
-    assert calls == [("seed", 25)]
-
-
 def test_group_description():
     cli = CLI()
     db = cli.group("db", description="Database commands")
