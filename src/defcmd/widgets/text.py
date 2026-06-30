@@ -1,32 +1,13 @@
 from __future__ import annotations
 
-from defcmd.widgets.base import Widget
-from defcmd.terminal import bold, dim, red, cyan, green, Cursor
-from defcmd.terminal.reader import InputReader, DefaultInputReader
+from .base import Widget
+from ..terminal import bold, dim, red, cyan, green, Cursor
+from ..terminal.reader import InputReader, DefaultInputReader
 
 from typing import Any, Callable
 
-class TextInputWidget(Widget):
-    """
-    A widget that allows the user to input text
-    
-    Attributes:
-        prompt (str): The prompt message to display to the user.
-        prompt_prefix (str): The prefix to display before the prompt message.
-        prompt_suffix (str): The suffix to display after the prompt message.
-        help (str): Optional help text to display alongside the prompt.
-        default (Any): The default value to use if the user presses enter without providing input.
-        secret (bool): Whether the input should be hidden (e.g., for passwords).
-        secret_char (str): The character to display when the input is hidden.
-        converter (Callable[[str], Any]): A function to convert the raw input string to the desired type.
-        input_reader (InputReader): An object responsible for reading user input from the terminal. Used to facilitate testing and customization of input handling. Defaults to DefaultInputReader if not provided.
-
-    Methods:
-        `render()`: Renders the widget as a string for display in the terminal.
-        `render_done()`: Renders the final state of the widget after user interaction.
-        `prompt()`: Prompts the user for input on a loop and returns the value.
-        `value()`: Returns the current value of the widget. If the widget has not been interacted with yet, this will prompt the user for input. Otherwise, it will return the cached value
-    """
+class TextInputWidget(Widget[str]):
+    """A widget that allows the user to input text"""
 
     def __init__(
             self,
@@ -77,7 +58,7 @@ class TextInputWidget(Widget):
         return f"{checkmark} {label}{self._prompt_suffix}{value}"
 
 
-    def prompt(self) -> Any:
+    def prompt(self) -> str:
         """Prompt the user for input on a loop and return the value"""
         
         prompt = self.render()
@@ -130,7 +111,7 @@ class TextInputWidget(Widget):
         return self._value
 
     @property
-    def value(self) -> Any:
+    def value(self) -> str:
         """Get the current value of the widget"""
         # Only prompt if we haven't been interacted with yet
         if not self._interacted:

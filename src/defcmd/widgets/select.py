@@ -1,29 +1,11 @@
 from __future__ import annotations
 
-from defcmd.widgets.base import Widget
-from defcmd.terminal import bold, cyan, green, magenta, inverse, dim, Cursor, raw_mode
-from defcmd.terminal.reader import InputReader, DefaultInputReader
+from .base import Widget
+from ..terminal import bold, cyan, green, magenta, inverse, dim, Cursor, raw_mode
+from ..terminal.reader import InputReader, DefaultInputReader
 
-class SelectWidget(Widget):
-    """
-    A widget that allows the user to select from a list of options.
-
-    Attributes:
-        prompt (str): The prompt message to display to the user.
-        prompt_prefix (str): The prefix to display before the prompt message.
-        prompt_suffix (str): The suffix to display after the prompt message.
-        help (str): Optional help text to display alongside the prompt.
-        selection_marker (str): The marker to display next to the currently selected option.
-        options (list[str]): The list of options to display for selection.
-        default (str): The default value to use if the user presses enter without making a selection.
-        input_reader (InputReader): An object responsible for reading user input from the terminal. Used to facilitate testing and customization of input handling. Defaults to DefaultInputReader if not provided.
-
-    Methods:
-        `render()`: Renders the widget as a string for display in the terminal.
-        `render_done()`: Renders the final state of the widget after user interaction.
-        `prompt()`: Prompts the user for input on a loop and returns the value.
-        `value()`: Returns the current value of the widget. If the widget has not been interacted with yet, this will prompt the user for input. Otherwise, it will return the cached value.
-    """
+class SelectWidget(Widget[str]):
+    """A widget that allows the user to select from a list of options"""
 
     def __init__(
         self,
