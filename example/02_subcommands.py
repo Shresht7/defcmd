@@ -1,11 +1,8 @@
-from defcmd import cmd, CLI, Spec
-
+from defcmd import CLI, Spec
 from typing import Annotated
 
 
-
 cli = CLI(description="Example CLI with subcommands")
-
 
 @cli.subcmd
 def echo(message: str, uppercase:Annotated[bool, Spec(short='u')] = False):
@@ -13,7 +10,6 @@ def echo(message: str, uppercase:Annotated[bool, Spec(short='u')] = False):
     if uppercase:
         message = message.upper()
     print(message)
-
 
 
 @cli.subcmd(name="greet", description="Greet a user")
@@ -24,7 +20,6 @@ def greet(name: str, times: int = 1, excited: bool = False):
         greeting += "!!!"
     for _ in range(times):
         print(greeting)
-
 
 
 @cli.subcmd(name="farewell", description="Bid farewell to a user")
@@ -39,7 +34,6 @@ def farewell(
         farewell_message += " 😢"
     for _ in range(times):
         print(farewell_message)
-
 
 
 if __name__ == "__main__":
