@@ -416,10 +416,6 @@ The `example/` directory contains small manual scripts for trying behavior in a 
 uv run python example/script.py
 ```
 
-### ☑️ TODO / Ideas 💡
-
-- [ ] Write proper module documentation
-
 ---
 
 ## 📄 License
