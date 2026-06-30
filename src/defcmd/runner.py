@@ -10,7 +10,7 @@ import argparse
 from defcmd.argparser import build_parser
 from defcmd.introspect import inspect_function_signature
 from defcmd.interactive import is_interactive
-from defcmd.prompt import prompt_for_param
+from defcmd.widgets import prompt, SelectWidget
 
 from typing import Callable, TypeAlias
 
@@ -52,7 +52,7 @@ class Cmd:
         """Run an interactive wizard to prompt the user for each parameter"""
         kwargs = {}
         for param in self.params:
-            kwargs[param.name] = prompt_for_param(param)
+            kwargs[param.name] = prompt(param)
         return self.fn(**kwargs)
     
     def attach_to_parser(self, subparsers: ArgSubparsers, name: str):
@@ -98,10 +98,12 @@ class CLI:
         # If no arguments are provided and we're in an interactive environment, run the interactive wizard for the CLI
         # TODO: Implement a more sophisticated interactive mode that allows the user to select a command and then prompts for its parameters
         if is_interactive(argv):
-            print("Available commands:")
-            for cmdname in self.commands:
-                print(f"  {cmdname}")
-            cmdname = input("Enter a command: ").strip()
+            widget = SelectWidget(
+                prompt="Select a command to run",
+                options=list(self.commands.keys()),
+                default=None,
+            )
+            cmdname = widget.value
             if cmdname in self.commands:
                 return self.commands[cmdname].run([])
             print(f"Error: '{cmdname}' is not a valid command.")

@@ -1,10 +1,10 @@
-from typing import Annotated
+from typing import Annotated, Literal
 from defcmd.spec import Spec
 from defcmd.runner import cmd
 
 @cmd
 def action(
-        payload: Annotated[str, Spec(help="The payload to send", prompt="Payload")],
+        payload: Annotated[Literal["json", "xml", "csv", "html"], Spec(help="The payload to send", prompt="Payload")],
         token: Annotated[str, Spec(short="t", help="The authentication token", prompt="Enter your token", secret=True)],
         host: Annotated[str, Spec(help="The host to connect to")] = "localhost",
         port: Annotated[int, Spec(short='p', help="The port to connect to")] = 8080,

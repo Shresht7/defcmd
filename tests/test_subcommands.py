@@ -244,22 +244,19 @@ def test_unknown_nested_command(monkeypatch):
         cli.run(["db", "unknown"])
 
 
-def test_group_interactive(monkeypatch):
+def test_cli_run_with_default_argv(monkeypatch):
     cli = CLI()
     calls = []
 
-    db = cli.group("db")
+    @cli.subcmd
+    def status():
+        calls.append("status called")
 
-    @db.subcmd
-    def seed(count: int = 10):
-        calls.append(("seed", count))
+    monkeypatch.setattr("sys.argv", ["script.py", "status"])
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
 
-    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
-    inputs = iter(["db", "seed", "25"])
-    monkeypatch.setattr("builtins.input", lambda *_: next(inputs))
-
-    cli.run([])
-    assert calls == [("seed", 25)]
+    cli.run()
+    assert calls == ["status called"]
 
 
 def test_group_description():

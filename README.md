@@ -404,6 +404,12 @@ uv sync
 uv run pytest -v
 ```
 
+to run `pytest-cov` for coverage report:
+
+```sh
+uv run pytest --cov=defcmd --cov-report=term-missing # or --cov-report=html
+```
+
 The `example/` directory contains small manual scripts for trying behavior in a real terminal. `example/script.py` shows the basic API, while `example/advanced.py` shows `Annotated[..., Spec(...)]` metadata such as help text, custom prompts, secret input, and short flags. These examples are not part of the test suite, but they are useful for manually trying interactive behavior in a real tty.
 
 ```sh

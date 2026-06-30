@@ -47,3 +47,21 @@ def test_parse_value_no_spec():
     [p] = inspect_function_signature(f)
 
     assert parse_value(p, "Alice") == "Alice"
+
+
+def test_parse_bool_invalid():
+    from defcmd.convert import parse_bool
+
+    with pytest.raises(ValueError, match="please enter a valid boolean"):
+        parse_bool("notabool")
+
+
+def test_parse_value_bool():
+    def f(verbose: bool):
+        pass
+
+    from defcmd.introspect import inspect_function_signature
+    [p] = inspect_function_signature(f)
+
+    assert parse_value(p, "true") is True
+    assert parse_value(p, "false") is False
