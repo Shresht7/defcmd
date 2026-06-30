@@ -1,6 +1,5 @@
+from defcmd import cmd, Spec
 from typing import Annotated, Literal
-from defcmd.spec import Spec
-from defcmd.runner import cmd
 
 @cmd
 def action(
