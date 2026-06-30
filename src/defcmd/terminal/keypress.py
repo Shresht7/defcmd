@@ -1,7 +1,34 @@
+"""
+Cross-platform terminal keypress reader.
+
+This module provides utilities for reading single keypresses from the terminal on both Windows and Unix-like systems.
+It abstracts away the platform-specific details of raw terminal input and normalizes keypresses into consistent, human-readable strings.
+
+Supported features include:
+
+- Reading a single keypress without waiting for Enter.
+- Cross-platform handling of special keys such as arrows.
+- Normalization of control characters and ANSI escape sequences.
+- A context manager for enabling raw terminal mode on Unix-like systems.
+
+Typical usage:
+
+    with raw_mode():
+        while some_condition:
+            key = read_keypress()
+
+Functions:
+- `raw_mode()`: Context manager to enable raw terminal mode.
+- `read_keypress()`: Reads a single keypress and returns its normalized string representation.
+- `normalize()`: Normalizes raw keypress sequences into human-readable strings.
+"""
+
 from __future__ import annotations
 
 import sys
 import contextlib
+
+__all__ = ["raw_mode", "read_keypress", "normalize"]
 
 # Key mapping for special keys and control characters
 KEY_MAP = {
@@ -29,6 +56,18 @@ CSI_KEY_MAP = {
     "F": "end",
 }
 
+# Mapping for special keys on Windows
+WIN_SPECIAL_KEY_MAP = {
+    b"H": "up",
+    b"P": "down",
+    b"K": "left",
+    b"M": "right",
+}
+
+# -----------------
+# TERMINAL RAW MODE
+# -----------------
+
 @contextlib.contextmanager
 def raw_mode():
     """Enable raw mode for the terminal, allowing for unbuffered input."""
@@ -45,24 +84,21 @@ def raw_mode():
             termios.tcsetattr(fd, termios.TCSADRAIN, old)   # restore the original terminal settings after exiting raw mode
 
 
-def read_keypress(inject=None) -> str:
+# --------------
+# READ KEY PRESS
+# --------------
+
+def read_keypress(inject: str | None = None) -> str:
     """Read a single keypress from the terminal and return its normalized string representation."""
 
     # If an injected keypress is provided (for testing), normalize and return it
     if inject is not None:
-        return _normalize(inject)
+        return normalize(inject)
 
     # Read the raw keypress from the terminal in raw mode and normalize it to a human-readable string
     raw = _read_raw_keypress()
-    return _normalize(raw)
+    return normalize(raw)
 
-# Mapping for special keys on Windows
-_win_special_key_map = {
-    b"H": "up",
-    b"P": "down",
-    b"K": "left",
-    b"M": "right",
-}
 
 def _read_raw_keypress() -> str:
     """Read a single keypress from the terminal in raw mode and return the raw string."""
@@ -70,18 +106,18 @@ def _read_raw_keypress() -> str:
     if sys.platform == "win32":
         import msvcrt
         
-        b = msvcrt.getch()  # Read the first byte (character) from the console. This can be a regular character or a special key indicator.
+        b = msvcrt.getch()  # Read the first character from the console. This can be a regular character or a special key indicator.
         
         # Handle special keys (like arrow keys) which are sent as two-character sequences on Windows
         if b == b"\x00" or b == b"\xe0":                        # Special keys (arrows, function keys, etc.)
             b2 = msvcrt.getch()                                 # Read the second character
-            return _win_special_key_map.get(b2, b2.decode())
+            return WIN_SPECIAL_KEY_MAP.get(b2, b2.decode())
         
         # Handle regular keys (letters, numbers, enter, etc.)
         return b.decode('utf-8', errors='replace')
 
     else:
-        b = sys.stdin.read(1)                   # Read a single byte (character)
+        b = sys.stdin.read(1)                   # Read a single character
 
         # Handle ANSI escape sequences for special keys (like arrow keys) which start with the escape character "\x1b"
         if b == "\x1b":
@@ -100,8 +136,11 @@ def _read_raw_keypress() -> str:
         return b
 
 
+# ---------
+# NORMALIZE
+# ---------
 
-def _normalize(seq: str) -> str:
+def normalize(seq: str) -> str:
     """Normalize the raw keypress sequence to a human-readable string."""
 
     # Check if the sequence is in the predefined KEY_MAP

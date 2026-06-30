@@ -1,3 +1,18 @@
+"""
+Utilities for generating ANSI escape sequences.
+
+This module provides objects representing ANSI text styles, colors, and
+cursor control sequences. It allows terminal output to be styled using
+Python objects instead of manually constructing escape sequences.
+
+The module supports:
+
+- text styles such as bold and underline
+- standard and RGB colors
+- composing multiple styles
+- cursor movement and screen manipulation
+"""
+
 from typing import Any
 
 # ANSI escape sequences are used to control text formatting, color, and other output options in terminal emulators.
@@ -42,7 +57,7 @@ class ANSICode:
         """Wrap the given text with the ANSI escape code to apply formatting."""
         return f"{self}{text}{self.unset}"
     
-    def __call__(self, *args: Any, **kwds: Any) -> Any:
+    def __call__(self, *args: object, **kwds: Any) -> str:
         return self.wrap(" ".join(str(arg) for arg in args))
 
 # ---------------
