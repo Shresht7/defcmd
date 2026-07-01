@@ -219,6 +219,26 @@ def test_cli_subcmd_epilog_defaults_to_none():
     assert cli.commands["greet"].epilog is None
 
 
+def test_cli_subcmd_aliases_override():
+    cli = CLI()
+
+    @cli.subcmd(aliases=["ls", "list"])
+    def greet(name: str):
+        pass
+
+    assert cli.commands["greet"].aliases == ["ls", "list"]
+
+
+def test_cli_subcmd_aliases_defaults_to_none():
+    cli = CLI()
+
+    @cli.subcmd
+    def greet(name: str):
+        pass
+
+    assert cli.commands["greet"].aliases is None
+
+
 def test_cli_subcmd_prompt_optional_false(monkeypatch):
     cli = CLI()
     calls = []

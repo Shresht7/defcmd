@@ -33,6 +33,7 @@ class CmdOptions(TypedDict, total=False):
     help: str | None
     description: str | None
     epilog: str | None
+    aliases: list[str] | None
     prompt_optional: bool | None
 
 
@@ -62,12 +63,13 @@ def cmd(fn: Fn | None = None, **kwargs: Unpack[CmdOptions]) -> Cmd | Callable[[F
 class Cmd:
     """Represents a command-line command, wrapping a Python function and providing argument parsing and interactive prompting"""
 
-    def __init__(self, fn: Fn, *, help: str | None = None, description: str | None = None, epilog: str | None = None, prompt_optional: bool | None = True):
+    def __init__(self, fn: Fn, *, help: str | None = None, description: str | None = None, epilog: str | None = None, aliases: list[str] | None = None, prompt_optional: bool | None = True):
         self.fn = fn
         self.params = inspect_function_signature(fn)
         self.description = description or fn.__doc__
         self.help = help or self.description
         self.epilog = epilog
+        self.aliases = aliases
         self.prompt_optional = prompt_optional
 
 
@@ -108,7 +110,7 @@ class Cmd:
 
     def attach_to_parser(self, subparsers: ArgSubparsers, name: str):
         """Attach this command's parser to a provided parent command's subparsers, allowing for nested commands"""
-        parser = subparsers.add_parser(name, description=self.description, help=self.help, epilog=self.epilog)
+        parser = subparsers.add_parser(name, description=self.description, help=self.help, epilog=self.epilog, aliases=self.aliases or [])
         build_parser(self.params, parser=parser)
 
 
