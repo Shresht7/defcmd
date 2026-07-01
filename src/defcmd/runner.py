@@ -32,33 +32,34 @@ Fn: TypeAlias = Callable[..., Any]  # Type alias for a callable function that ta
 # ---
 
 @overload
-def cmd(fn: Fn, *, help: str | None = None, description: str | None = None, prompt_optional: bool | None = True) -> Cmd: ...
+def cmd(fn: Fn, *, help: str | None = None, description: str | None = None, prompt_optional: bool | None = True, epilog: str | None = None) -> Cmd: ...
 @overload
-def cmd(*, help: str | None = None, description: str | None = None, prompt_optional: bool | None = True) -> Callable[[Fn], Cmd]: ...
+def cmd(*, help: str | None = None, description: str | None = None, prompt_optional: bool | None = True, epilog: str | None = None) -> Callable[[Fn], Cmd]: ...
 
 
-def cmd(fn: Fn | None = None, *, help: str | None = None, description: str | None = None, prompt_optional: bool | None = True) -> Cmd | Callable[[Fn], Cmd]:
+def cmd(fn: Fn | None = None, *, help: str | None = None, description: str | None = None, prompt_optional: bool | None = True, epilog: str | None = None) -> Cmd | Callable[[Fn], Cmd]:
     """Use the function signature to create a command-line interface"""
 
     # If a function is provided, create a Cmd instance immediately
     if fn is not None:
-        return Cmd(fn, help=help, description=description, prompt_optional=prompt_optional)
+        return Cmd(fn, help=help, description=description, prompt_optional=prompt_optional, epilog=epilog)
 
     # Otherwise, return a decorator for later use
     def decorator(f: Fn) -> Cmd:
-        return Cmd(f, help=help, description=description, prompt_optional=prompt_optional)    
+        return Cmd(f, help=help, description=description, prompt_optional=prompt_optional, epilog=epilog)    
     return decorator
 
 
 class Cmd:
     """Represents a command-line command, wrapping a Python function and providing argument parsing and interactive prompting"""
 
-    def __init__(self, fn: Fn, *, help: str | None = None, description: str | None = None, prompt_optional: bool | None = True):
+    def __init__(self, fn: Fn, *, help: str | None = None, description: str | None = None, prompt_optional: bool | None = True, epilog: str | None = None):
         self.fn = fn
         self.params = inspect_function_signature(fn)
         self.description = description or fn.__doc__
         self.help = help or self.description
         self.prompt_optional = prompt_optional
+        self.epilog = epilog
 
 
     # Allow the Cmd instance to be called like a function, forwarding arguments to the underlying function
@@ -80,7 +81,7 @@ class Cmd:
         # Otherwise, run the command with the provided arguments
 
         # Build the argument parser based on the function's parameters and parse the provided arguments
-        parser = build_parser(self.params, description=self.description)
+        parser = build_parser(self.params, description=self.description, epilog=self.epilog)
         args = parser.parse_args(argv)
 
         # Extract the parsed arguments and call the function with them
@@ -98,7 +99,7 @@ class Cmd:
 
     def attach_to_parser(self, subparsers: ArgSubparsers, name: str):
         """Attach this command's parser to a provided parent command's subparsers, allowing for nested commands"""
-        parser = subparsers.add_parser(name, description=self.description, help=self.help)
+        parser = subparsers.add_parser(name, description=self.description, help=self.help, epilog=self.epilog)
         build_parser(self.params, parser=parser)
 
 
@@ -114,16 +115,16 @@ class CLI:
 
 
     @overload
-    def subcmd(self, fn: Fn, *, name: str | None = None, help: str | None = None, description: str | None = None, prompt_optional: bool | None = True) -> Fn: ...
+    def subcmd(self, fn: Fn, *, name: str | None = None, help: str | None = None, description: str | None = None, prompt_optional: bool | None = True, epilog: str | None = None) -> Fn: ...
     @overload
-    def subcmd(self, *, name: str | None = None, help: str | None = None, description: str | None = None, prompt_optional: bool | None = True) -> Callable[[Fn], Fn]: ...
+    def subcmd(self, *, name: str | None = None, help: str | None = None, description: str | None = None, prompt_optional: bool | None = True, epilog: str | None = None) -> Callable[[Fn], Fn]: ...
 
-    def subcmd(self, fn: Fn | None = None, *, name: str | None =None, help: str | None = None, description: str | None = None, prompt_optional: bool | None = True):
+    def subcmd(self, fn: Fn | None = None, *, name: str | None =None, help: str | None = None, description: str | None = None, prompt_optional: bool | None = True, epilog: str | None = None):
         """Decorator to register a function as a subcommand of the CLI"""
 
         def decorator(fn: Fn) -> Fn:
             cmd_name = name or fn.__name__
-            cmd = Cmd(fn, help=help, description=description, prompt_optional=prompt_optional) 
+            cmd = Cmd(fn, help=help, description=description, prompt_optional=prompt_optional, epilog=epilog) 
             self.commands[cmd_name] = cmd       # Store the command in the CLI's commands dictionary
             return fn
 

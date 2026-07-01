@@ -183,6 +183,42 @@ def test_cli_subcmd_help_falls_back_to_docstring():
     assert cli.commands["greet"].help == "docstring desc"
 
 
+def test_cmd_epilog_override():
+    @cmd(epilog="see also: --help")
+    def deploy(host: str):
+        pass
+
+    assert deploy.epilog == "see also: --help"
+
+
+def test_cmd_epilog_defaults_to_none():
+    @cmd
+    def deploy(host: str):
+        pass
+
+    assert deploy.epilog is None
+
+
+def test_cli_subcmd_epilog_override():
+    cli = CLI()
+
+    @cli.subcmd(epilog="see also: --help")
+    def greet(name: str):
+        pass
+
+    assert cli.commands["greet"].epilog == "see also: --help"
+
+
+def test_cli_subcmd_epilog_defaults_to_none():
+    cli = CLI()
+
+    @cli.subcmd
+    def greet(name: str):
+        pass
+
+    assert cli.commands["greet"].epilog is None
+
+
 def test_cli_subcmd_prompt_optional_false(monkeypatch):
     cli = CLI()
     calls = []
