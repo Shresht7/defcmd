@@ -65,16 +65,16 @@ def cmd(fn: Fn | None = None, **kwargs: Unpack[CmdOptions]) -> Cmd | Callable[[F
 class Cmd:
     """Represents a command-line command, wrapping a Python function and providing argument parsing and interactive prompting"""
 
-    def __init__(self, fn: Fn, *, help: str | None = None, description: str | None = None, epilog: str | None = None, aliases: list[str] | None = None, hidden: bool = False, version: str | None = None, prompt_optional: bool | None = True):
+    def __init__(self, fn: Fn, **kwargs: Unpack[CmdOptions]):
         self.fn = fn
         self.params = inspect_function_signature(fn)
-        self.description = description or fn.__doc__
-        self.help = help or self.description
-        self.epilog = epilog
-        self.aliases = aliases
-        self.hidden = hidden
-        self.version = version
-        self.prompt_optional = prompt_optional
+        self.description = kwargs.get("description") or fn.__doc__
+        self.help = kwargs.get("help") or self.description
+        self.epilog = kwargs.get("epilog")
+        self.aliases = kwargs.get("aliases")
+        self.hidden = kwargs.get("hidden", False)
+        self.version = kwargs.get("version")
+        self.prompt_optional = kwargs.get("prompt_optional", True)
 
 
     # Allow the Cmd instance to be called like a function, forwarding arguments to the underlying function
