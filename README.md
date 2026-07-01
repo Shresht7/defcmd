@@ -175,13 +175,13 @@ Use `Annotated[..., Spec(...)]` to add per-parameter metadata, see the next sect
 The `Spec` annotations allow you to attach additional metadata to the cli parameters:
 
 ```python
-from typing import Annotated
+from typing import Annotated, Literal
 from defcmd import cmd
 from defcmd.spec import Spec
 
 @cmd
 def action(
-        payload: Annotated[str, Spec(help="The payload to send", prompt="Payload")],
+        payload: Annotated[Literal["json", "xml", "csv", "html"], Spec(help="The payload to send", prompt="Payload")],
         token: Annotated[str, Spec(short="t", help="The authentication token", prompt="Enter your token", secret=True)],
         host: Annotated[str, Spec(help="The host to connect to")] = "localhost",
         port: Annotated[int, Spec(short='p', min=1, max=65535, help="The port to connect to")] = 8080,
