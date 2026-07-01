@@ -2,8 +2,8 @@
 
 Turn any Python function signature into a command-line script.
 
-> "I thought _Python_ was supposed to be ***the scripting language!*** why do I have to write 100 lines of boilerplate with `argparse` just to make a simple script?!" 
-> <br> — You, probably
+> “I thought _Python_ was supposed to be ***the scripting language!*** why do I have to write 100 lines of boilerplate with `argparse` just to make a simple script?!”
+> <br> — Me, _before writing 1500 lines of "minimal" framework_
 
 ```python
 from defcmd import cmd
@@ -46,7 +46,7 @@ Takes inspiration from **PowerShell** (of all places!) and the [`fncmd`](https:/
 The goal is to make it **easy to write small scripts** that are **usable from the command line** without having to write a lot of boilerplate.
 
 > [!NOTE]
-> `defcmd` is **not** supposed to be a full-featured CLI framework like `click` or `typer`. It is intentionally minimal, and is designed for **small scripts** where you want to avoid boilerplate and just get the **job done**.
+> `defcmd` is **not** supposed to be a full-featured CLI framework like `click` or `typer`. It is intentionally minimal, and is designed for **small scripts** where you want to avoid boilerplate and just get the **job done**. At least, that was the goal when I began; I may have gotten a bit carried away.
 
 ---
 
@@ -126,15 +126,19 @@ Run the script with **no arguments at all**, from a real terminal, and `defcmd` 
 
 ```bash
 $ python greet.py
-Name: Alice
-Times [1]:        # press Enter to accept the default
-Excited [y/N]: y
+? Name: Alice
+✓ Name: Alice
+? Times [default: 1]:
+✓ Times: 1
+? Excited [y/N]: y
+✓ Excited: y
 HELLO, ALICE!!!
 ```
 
-- Required parameters will keep re-prompting until you enter something; blank input isn't accepted.
+- Required parameters keep re-prompting until you enter something; blank input isn't accepted.
 - Optional parameters show their default in brackets; pressing Enter accepts it.
-- Boolean parameters accept `y`/`n`, `yes`/`no`, `true`/`false`, or `1`/`0`.
+- Boolean parameters accept a single keypress (`y` or `n`) or press Enter to accept the default.
+- Each prompt is replaced in-place by a `✓` confirmation line on completion.
 - `Literal` parameters list the valid choices and accept either the exact value or its number.
 
 When using the advanced `Spec` annotations:
@@ -143,7 +147,11 @@ When using the advanced `Spec` annotations:
 - Parameters with `Spec(help=...)` can override the default help text shown in `--help`.
 - Parameters with validation constraints (`min`, `max`, `pattern`) will re-prompt until the value satisfies the constraint.
 
-Interactive mode only triggers when **both** of these are true: no arguments were passed, and stdin is a real terminal (not piped or redirected). Running a script with no args in a non-interactive context (cron, CI, piped input) just errors normally instead of hanging waiting for input.
+Interactive mode only triggers when **both** of these are true: 
+- no arguments were passed, 
+- and stdin is a real terminal (not piped or redirected). 
+
+Running a script with no args in a non-interactive context (cron, CI, piped input) just errors normally instead of hanging waiting for input.
 
 ### Help text
 
@@ -164,20 +172,20 @@ positional arguments:
   host
 ```
 
-Use `Annotated[..., Spec(...)]` to add per-parameter metadata — see below.
+Use `Annotated[..., Spec(...)]` to add per-parameter metadata, see the next section for details.
 
 ### Advanced Parameter Specification
 
 The `Spec` annotations allow you to attach additional metadata to the cli parameters:
 
 ```python
-from typing import Annotated
+from typing import Annotated, Literal
 from defcmd import cmd
 from defcmd.spec import Spec
 
 @cmd
 def action(
-        payload: Annotated[str, Spec(help="The payload to send", prompt="Payload")],
+        payload: Annotated[Literal["json", "xml", "csv", "html"], Spec(help="The payload to send", prompt="Payload")],
         token: Annotated[str, Spec(short="t", help="The authentication token", prompt="Enter your token", secret=True)],
         host: Annotated[str, Spec(help="The host to connect to")] = "localhost",
         port: Annotated[int, Spec(short='p', min=1, max=65535, help="The port to connect to")] = 8080,
@@ -270,8 +278,8 @@ Project 'myapp' created
 ```
 
 The `@cli.subcmd` decorator accepts:
-- `name` — override the subcommand name (defaults to the function name).
-- `description` — override the help text (defaults to the function docstring).
+- `name`: override the subcommand name (defaults to the function name).
+- `description`: override the help text (defaults to the function docstring).
 
 ### Nested subcommands / groups
 
@@ -341,7 +349,7 @@ $ python tool.py container run nginx --detach
 $ python tool.py container logs follow my_container
 ```
 
-Interactive mode works with groups — it recursively prompts until it reaches a leaf command, then runs its wizard.
+Interactive mode works with groups, it recursively prompts until it reaches a leaf command, then runs its wizard.
 
 ---
 
@@ -369,27 +377,24 @@ uv sync
 
 ```
 ./
-├── example/
-│   ├── script.py               # Basic Example
-│   └── advanced.py             # Advanced Spec Example
+├── examples/
+│   ├── 00_basic.py
+│   ├── 01_annotated.py
+│   ├── 02_subcommands.py
+│   └── 03_nested_subcommands.py
 ├── src/
 │   └── defcmd/
-│       ├── __init__.py         # Package Init
+│       ├── __init__.py
+│       ├── terminal/           # Terminal Library
+│       ├── widgets/            # Interactive Widgets
 │       ├── argparser.py        # Argument Parser
 │       ├── convert.py          # Type Conversion & Validation
 │       ├── interactive.py      # Interactive Prompting Wizard
 │       ├── introspect.py       # Function Signature Introspection
-│       ├── prompt.py           # Prompt Utilities
 │       ├── runner.py           # Command & CLI Runner
 │       └── spec.py             # Spec Annotation
 ├── tests/
-│   ├── test_argparser.py
-│   ├── test_convert.py
-│   ├── test_interactive.py
-│   ├── test_introspect.py
-│   ├── test_prompt.py
-│   ├── test_runner.py
-│   └── test_subcommands.py
+│   └── ...
 ├── .gitignore
 ├── .python-version
 ├── README.md
@@ -410,10 +415,10 @@ to run `pytest-cov` for coverage report:
 uv run pytest --cov=defcmd --cov-report=term-missing # or --cov-report=html
 ```
 
-The `example/` directory contains small manual scripts for trying behavior in a real terminal. `example/script.py` shows the basic API, while `example/advanced.py` shows `Annotated[..., Spec(...)]` metadata such as help text, custom prompts, secret input, and short flags. These examples are not part of the test suite, but they are useful for manually trying interactive behavior in a real tty.
+The `examples/` directory contains small manual scripts for trying behavior in a real terminal. `examples/00_basic.py` shows the basic API, while `examples/01_annotated.py` shows `Annotated[..., Spec(...)]` metadata such as help text, custom prompts, secret input, and short flags. These examples are not part of the test suite, but they are useful for manually trying interactive behavior in a real tty.
 
 ```sh
-uv run python example/script.py
+uv run python examples/00_basic.py
 ```
 
 ---

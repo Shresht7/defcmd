@@ -6,7 +6,7 @@ def action(
         payload: Annotated[Literal["json", "xml", "csv", "html"], Spec(help="The payload to send", prompt="Payload")],
         token: Annotated[str, Spec(short="t", help="The authentication token", prompt="Enter your token", secret=True)],
         host: Annotated[str, Spec(help="The host to connect to")] = "localhost",
-        port: Annotated[int, Spec(short='p', help="The port to connect to")] = 8080,
+        port: Annotated[int, Spec(short='p', min=1, max=65535, help="The port to connect to")] = 8080,
         verbose: Annotated[bool, Spec(short='v', help="Enable verbose output")] = False
     ):
     print(f"Host: {host}")
