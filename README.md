@@ -126,15 +126,19 @@ Run the script with **no arguments at all**, from a real terminal, and `defcmd` 
 
 ```bash
 $ python greet.py
-Name: Alice
-Times [1]:        # press Enter to accept the default
-Excited [y/N]: y
+? Name: Alice
+✓ Name: Alice
+? Times [default: 1]:
+✓ Times: 1
+? Excited [y/N]: y
+✓ Excited: y
 HELLO, ALICE!!!
 ```
 
-- Required parameters will keep re-prompting until you enter something; blank input isn't accepted.
+- Required parameters keep re-prompting until you enter something; blank input isn't accepted.
 - Optional parameters show their default in brackets; pressing Enter accepts it.
-- Boolean parameters accept a single keypress. `y` (yes) or `n` (no), or press Enter to accept the default.
+- Boolean parameters accept a single keypress (`y` or `n`) or press Enter to accept the default.
+- Each prompt is replaced in-place by a `✓` confirmation line on completion.
 - `Literal` parameters list the valid choices and accept either the exact value or its number.
 
 When using the advanced `Spec` annotations:
