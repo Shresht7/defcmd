@@ -1,6 +1,6 @@
 [project]
 name = "defcmd"
-version = "0.5.0"
+version = "0.5.1"
 description = "Turn a function signature into a command-line script"
 readme = "README.md"
 license = "MIT"

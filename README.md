@@ -70,6 +70,23 @@ if __name__ == "__main__":
 
 `defcmd` derives everything (argument names, types, defaults, required-ness) directly from the function signature. There's no separate schema to keep in sync.
 
+#### `@cmd` parameters
+
+| Parameter         | Type                 | Default  | Description                                            |
+| ----------------- | -------------------- | -------- | ------------------------------------------------------ |
+| `description`     | `str \| None`        | `fn.__doc__` | Override the help description for `--help`.       |
+| `help`            | `str \| None`        | `description` → `fn.__doc__` | Short help text for subcommand listings. |
+| `epilog`          | `str \| None`        | `None`   | Text displayed after argument help in `--help`.        |
+| `version`         | `str \| None`        | `None`   | Adds `--version` / `-v` flag that prints and exits.    |
+| `hidden`          | `bool`               | `False`  | Exclude from interactive command selection.            |
+| `prompt_optional` | `bool \| None`       | `True`   | Skip prompting for optional parameters in interactive mode. |
+
+```python
+@cmd(description="Deploy the app", version="1.0.0", hidden=True)
+def deploy(host: str, port: int = 8080):
+    ...
+```
+
 ### Required vs. optional parameters
 
 A parameter with **no default value** is required and becomes a **positional argument**:
@@ -142,7 +159,9 @@ HELLO, ALICE!!!
 - `Literal` parameters list the valid choices and accept either the exact value or its number.
 
 When using the advanced `Spec` annotations:
-- Parameters with `Spec(prompt=...)` can override the default prompt text.
+- Parameters with `Spec(prompt="Enter value")` override the default prompt text.
+- Parameters with `Spec(prompt=True)` force prompting even when `@cmd(prompt_optional=False)` is set.
+- Parameters with `Spec(prompt=False)` skip prompting entirely and use the default value (raises an error if no default exists).
 - Parameters with `Spec(secret=True)` hide the input (for passwords, tokens, etc.).
 - Parameters with `Spec(help=...)` can override the default help text shown in `--help`.
 - Parameters with validation constraints (`min`, `max`, `pattern`) will re-prompt until the value satisfies the constraint.
@@ -155,11 +174,11 @@ Running a script with no args in a non-interactive context (cron, CI, piped inpu
 
 ### Help text
 
-The function's docstring is shown as the description in `--help`:
+The function's docstring is shown as the description in `--help`. Override it with `@cmd(description=...)`:
 
 ```python
+@cmd(description="Deploy the application to a target host.")
 def deploy(host: str):
-    """Deploy the application to a target host."""
     ...
 ```
 ```bash
@@ -172,7 +191,7 @@ positional arguments:
   host
 ```
 
-Use `Annotated[..., Spec(...)]` to add per-parameter metadata, see the next section for details.
+Use `@cmd(epilog=...)` for text after the argument help, and `@cmd(help=...)` for a shorter description used in subcommand listings. Per-parameter help text is set via `Annotated[..., Spec(help=...)]` — see the next section.
 
 ### Advanced Parameter Specification
 
@@ -210,7 +229,7 @@ Enter your token: ********
 | ---------- | -------------------------------------------------------- | ------------------------ |
 | `short`    | Short flag for the parameter (e.g., `-p`).               |                          |
 | `help`     | Help text for the parameter, shown in `--help`.          | The default help message |
-| `prompt`   | Custom prompt text for interactive mode.                 | The default prompt text  |
+| `prompt`   | Custom prompt text, `True` to force, `False` to skip.    | The default prompt text  |
 | `secret`   | If `True`, input is hidden in interactive mode.          |                          |
 | `min`      | Minimum numeric value (inclusive).                       |                          |
 | `max`      | Maximum numeric value (inclusive).                       |                          |
@@ -277,9 +296,14 @@ Name: myapp
 Project 'myapp' created
 ```
 
-The `@cli.subcmd` decorator accepts:
-- `name`: override the subcommand name (defaults to the function name).
-- `description`: override the help text (defaults to the function docstring).
+The `@cli.subcmd` decorator accepts all `@cmd` parameters plus:
+
+| Parameter | Type            | Default          | Description                                |
+| --------- | --------------- | ---------------- | ------------------------------------------ |
+| `name`    | `str \| None`   | `fn.__name__`    | Override the subcommand name.              |
+| `aliases` | `list[str] \| None` | `None`       | Alternative names for the subcommand (`add_parser(aliases=...)`). |
+
+`CLI(...)` also accepts `description`, `help`, and `version` for the top-level CLI parser.
 
 ### Nested subcommands / groups
 

@@ -1,3 +1,4 @@
+import pytest
 from defcmd.runner import cmd, CLI
 from defcmd.spec import Spec
 from typing import Annotated
@@ -75,6 +76,273 @@ def test_cmd_prompt_optional_false_with_spec_prompt_true_override(monkeypatch):
 
     deploy.run([])
     assert calls == [("myhost", 9090, False)]
+
+
+def test_cmd_description_override():
+    @cmd(description="custom desc")
+    def deploy(host: str, port: int = 8080):
+        """docstring desc"""
+
+    assert deploy.description == "custom desc"
+
+
+def test_cmd_description_falls_back_to_docstring():
+    @cmd
+    def deploy(host: str, port: int = 8080):
+        """docstring desc"""
+
+    assert deploy.description == "docstring desc"
+
+
+def test_cmd_description_defaults_to_none_when_no_docstring():
+    @cmd
+    def deploy(host: str, port: int = 8080):
+        pass
+
+    assert deploy.description is None
+
+
+def test_cli_subcmd_description_override():
+    cli = CLI()
+
+    @cli.subcmd(description="custom desc")
+    def greet(name: str):
+        """docstring desc"""
+
+    assert cli.commands["greet"].description == "custom desc"
+
+
+def test_cli_subcmd_description_falls_back_to_docstring():
+    cli = CLI()
+
+    @cli.subcmd
+    def greet(name: str):
+        """docstring desc"""
+
+    assert cli.commands["greet"].description == "docstring desc"
+
+
+def test_cmd_help_override():
+    @cmd(help="short help")
+    def deploy(host: str, port: int = 8080):
+        """docstring desc"""
+
+    assert deploy.help == "short help"
+
+
+def test_cmd_help_falls_back_to_description():
+    @cmd(description="long desc")
+    def deploy(host: str, port: int = 8080):
+        """docstring desc"""
+
+    assert deploy.help == "long desc"
+
+
+def test_cmd_help_falls_back_to_docstring():
+    @cmd
+    def deploy(host: str, port: int = 8080):
+        """docstring desc"""
+
+    assert deploy.help == "docstring desc"
+
+
+def test_cmd_help_defaults_to_none():
+    @cmd
+    def deploy(host: str, port: int = 8080):
+        pass
+
+    assert deploy.help is None
+
+
+def test_cli_subcmd_help_override():
+    cli = CLI()
+
+    @cli.subcmd(help="short help")
+    def greet(name: str):
+        """docstring desc"""
+
+    assert cli.commands["greet"].help == "short help"
+
+
+def test_cli_subcmd_help_falls_back_to_description():
+    cli = CLI()
+
+    @cli.subcmd(description="long desc")
+    def greet(name: str):
+        """docstring desc"""
+
+    assert cli.commands["greet"].help == "long desc"
+
+
+def test_cli_subcmd_help_falls_back_to_docstring():
+    cli = CLI()
+
+    @cli.subcmd
+    def greet(name: str):
+        """docstring desc"""
+
+    assert cli.commands["greet"].help == "docstring desc"
+
+
+def test_cmd_epilog_override():
+    @cmd(epilog="see also: --help")
+    def deploy(host: str):
+        pass
+
+    assert deploy.epilog == "see also: --help"
+
+
+def test_cmd_epilog_defaults_to_none():
+    @cmd
+    def deploy(host: str):
+        pass
+
+    assert deploy.epilog is None
+
+
+def test_cli_subcmd_epilog_override():
+    cli = CLI()
+
+    @cli.subcmd(epilog="see also: --help")
+    def greet(name: str):
+        pass
+
+    assert cli.commands["greet"].epilog == "see also: --help"
+
+
+def test_cli_subcmd_epilog_defaults_to_none():
+    cli = CLI()
+
+    @cli.subcmd
+    def greet(name: str):
+        pass
+
+    assert cli.commands["greet"].epilog is None
+
+
+def test_cli_subcmd_aliases_override():
+    cli = CLI()
+
+    @cli.subcmd(aliases=["ls", "list"])
+    def greet(name: str):
+        pass
+
+    assert cli.commands["greet"].aliases == ["ls", "list"]
+
+
+def test_cli_subcmd_aliases_defaults_to_none():
+    cli = CLI()
+
+    @cli.subcmd
+    def greet(name: str):
+        pass
+
+    assert cli.commands["greet"].aliases is None
+
+
+def test_cmd_hidden_defaults_to_false():
+    @cmd
+    def deploy(host: str):
+        pass
+
+    assert deploy.hidden is False
+
+
+def test_cmd_hidden_true():
+    @cmd(hidden=True)
+    def deploy(host: str):
+        pass
+
+    assert deploy.hidden is True
+
+
+def test_cli_subcmd_hidden_true():
+    cli = CLI()
+
+    @cli.subcmd(hidden=True)
+    def greet(name: str):
+        pass
+
+    assert cli.commands["greet"].hidden is True
+
+
+def test_cli_subcmd_hidden_excluded_from_interactive(monkeypatch):
+    cli = CLI()
+
+    @cli.subcmd
+    def visible_cmd(name: str):
+        pass
+
+    @cli.subcmd(hidden=True)
+    def hidden_cmd(name: str):
+        pass
+
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("builtins.input", lambda _: "Alice")
+
+    captured = {}
+    monkeypatch.setattr("defcmd.runner.SelectWidget", lambda **kw: captured.update(kw) or type("", (), {"value": "visible_cmd"})())
+
+    cli.run([])
+    assert "hidden_cmd" not in captured["options"]
+    assert "visible_cmd" in captured["options"]
+
+
+def test_cli_subcmd_hidden_still_callable_via_argv(monkeypatch):
+    cli = CLI()
+    calls = []
+
+    @cli.subcmd(hidden=True)
+    def greet(name: str):
+        calls.append(name)
+
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
+
+    cli.run(["greet", "Alice"])
+    assert calls == ["Alice"]
+
+
+def test_cmd_version_override():
+    @cmd(version="1.0.0")
+    def deploy(host: str):
+        pass
+
+    assert deploy.version == "1.0.0"
+
+
+def test_cmd_version_defaults_to_none():
+    @cmd
+    def deploy(host: str):
+        pass
+
+    assert deploy.version is None
+
+
+def test_cmd_version_flag(monkeypatch):
+    @cmd(version="1.0.0")
+    def deploy(host: str):
+        pass
+
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
+
+    with pytest.raises(SystemExit) as exc:
+        deploy.run(["--version"])
+    assert exc.value.code == 0
+
+
+def test_cli_version_override():
+    cli = CLI(version="2.0.0")
+    assert cli.version == "2.0.0"
+
+
+def test_cli_version_flag(monkeypatch):
+    cli = CLI(version="2.0.0")
+
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
+
+    with pytest.raises(SystemExit) as exc:
+        cli.run(["--version"])
+    assert exc.value.code == 0
 
 
 def test_cli_subcmd_prompt_optional_false(monkeypatch):

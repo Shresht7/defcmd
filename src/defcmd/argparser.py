@@ -19,12 +19,12 @@ from .convert import ValidationError, parse_value
 from typing import get_origin, get_args, Literal
 from collections.abc import Callable
 
-def build_parser(params: list[Parameter], description: str | None = None, parser: argparse.ArgumentParser | None = None) -> argparse.ArgumentParser:
+def build_parser(params: list[Parameter], description: str | None = None, parser: argparse.ArgumentParser | None = None, epilog: str | None = None) -> argparse.ArgumentParser:
     """Build an `argparse.ArgumentParser` based on the list of `Parameter` objects extracted from a function signature"""
     
     # If no parser is provided, create a new one with the given description
     if parser is None:
-        parser = argparse.ArgumentParser(description=description)
+        parser = argparse.ArgumentParser(description=description, epilog=epilog)
 
     for param in params:
 
