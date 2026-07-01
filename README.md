@@ -134,7 +134,7 @@ HELLO, ALICE!!!
 
 - Required parameters will keep re-prompting until you enter something; blank input isn't accepted.
 - Optional parameters show their default in brackets; pressing Enter accepts it.
-- Boolean parameters accept `y`/`n`, `yes`/`no`, `true`/`false`, or `1`/`0`.
+- Boolean parameters accept a single keypress. `y` (yes) or `n` (no), or press Enter to accept the default.
 - `Literal` parameters list the valid choices and accept either the exact value or its number.
 
 When using the advanced `Spec` annotations:
