@@ -239,6 +239,68 @@ def test_cli_subcmd_aliases_defaults_to_none():
     assert cli.commands["greet"].aliases is None
 
 
+def test_cmd_hidden_defaults_to_false():
+    @cmd
+    def deploy(host: str):
+        pass
+
+    assert deploy.hidden is False
+
+
+def test_cmd_hidden_true():
+    @cmd(hidden=True)
+    def deploy(host: str):
+        pass
+
+    assert deploy.hidden is True
+
+
+def test_cli_subcmd_hidden_true():
+    cli = CLI()
+
+    @cli.subcmd(hidden=True)
+    def greet(name: str):
+        pass
+
+    assert cli.commands["greet"].hidden is True
+
+
+def test_cli_subcmd_hidden_excluded_from_interactive(monkeypatch):
+    cli = CLI()
+
+    @cli.subcmd
+    def visible_cmd(name: str):
+        pass
+
+    @cli.subcmd(hidden=True)
+    def hidden_cmd(name: str):
+        pass
+
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("builtins.input", lambda _: "Alice")
+
+    captured = {}
+    monkeypatch.setattr("defcmd.runner.SelectWidget", lambda **kw: captured.update(kw) or type("", (), {"value": "visible_cmd"})())
+
+    cli.run([])
+    assert "hidden_cmd" not in captured["options"]
+    assert "visible_cmd" in captured["options"]
+
+
+def test_cli_subcmd_hidden_still_callable_via_argv(monkeypatch):
+    cli = CLI()
+    calls = []
+
+    @cli.subcmd(hidden=True)
+    def greet(name: str):
+        calls.append(name)
+
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
+
+    cli.run(["greet", "Alice"])
+    assert calls == ["Alice"]
+
+
 def test_cli_subcmd_prompt_optional_false(monkeypatch):
     cli = CLI()
     calls = []

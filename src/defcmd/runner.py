@@ -34,6 +34,7 @@ class CmdOptions(TypedDict, total=False):
     description: str | None
     epilog: str | None
     aliases: list[str] | None
+    hidden: bool
     prompt_optional: bool | None
 
 
@@ -63,13 +64,14 @@ def cmd(fn: Fn | None = None, **kwargs: Unpack[CmdOptions]) -> Cmd | Callable[[F
 class Cmd:
     """Represents a command-line command, wrapping a Python function and providing argument parsing and interactive prompting"""
 
-    def __init__(self, fn: Fn, *, help: str | None = None, description: str | None = None, epilog: str | None = None, aliases: list[str] | None = None, prompt_optional: bool | None = True):
+    def __init__(self, fn: Fn, *, help: str | None = None, description: str | None = None, epilog: str | None = None, aliases: list[str] | None = None, hidden: bool = False, prompt_optional: bool | None = True):
         self.fn = fn
         self.params = inspect_function_signature(fn)
         self.description = description or fn.__doc__
         self.help = help or self.description
         self.epilog = epilog
         self.aliases = aliases
+        self.hidden = hidden
         self.prompt_optional = prompt_optional
 
 
@@ -161,9 +163,10 @@ class CLI:
 
         # If no arguments are provided and we're in an interactive environment, run the interactive wizard for the CLI
         if is_interactive(argv):
+            cmds = [n for n, c in self.commands.items() if not getattr(c, "hidden", False)]
             widget = SelectWidget(
                 prompt="Select a command to run",
-                options=list(self.commands.keys()),
+                options=cmds,
                 default=None,
             )
             cmdname = widget.value
