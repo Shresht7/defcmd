@@ -171,6 +171,70 @@ def test_pattern_reprompts():
     value = prompt(param, input_reader=ScriptedInputReader(values=["abc", "12345", "6789"]))
     assert value == "6789"
 
+def test_spec_prompt_false_skips_prompt_and_uses_default():
+    def f(host: Annotated[str, Spec(prompt=False)] = "localhost"):
+        pass
+
+    [param] = inspect_function_signature(f)
+    # No input reader passed, would error if it tried to prompt
+    value = prompt(param)
+    assert value == "localhost"
+
+
+def test_spec_prompt_false_on_required_raises():
+    def f(host: Annotated[str, Spec(prompt=False)]):
+        pass
+
+    [param] = inspect_function_signature(f)
+    with pytest.raises(ValueError, match="Cannot skip prompt for required parameter"):
+        prompt(param)
+
+
+def test_spec_prompt_false_with_falsy_default():
+    def f(count: Annotated[int, Spec(prompt=False)] = 0):
+        pass
+
+    [param] = inspect_function_signature(f)
+    value = prompt(param)
+    assert value == 0
+
+
+def test_spec_prompt_false_with_none_default():
+    def f(name: Annotated[str | None, Spec(prompt=False)] = None):
+        pass
+
+    [param] = inspect_function_signature(f)
+    value = prompt(param)
+    assert value is None
+
+
+def test_spec_prompt_true_forces_prompt():
+    def f(host: Annotated[str, Spec(prompt=True)] = "localhost"):
+        pass
+
+    [param] = inspect_function_signature(f)
+    value = prompt(param, input_reader=ScriptedInputReader(values=["forced"]))
+    assert value == "forced"
+
+
+def test_spec_prompt_true_overrides_prompt_optional():
+    def f(host: Annotated[str, Spec(prompt=True)] = "localhost"):
+        pass
+
+    [param] = inspect_function_signature(f)
+    value = prompt(param, prompt_optional=False, input_reader=ScriptedInputReader(values=["forced"]))
+    assert value == "forced"
+
+
+def test_prompt_optional_false_skips_optional():
+    def f(name: str, port: int = 8080, verbose: bool = False):
+        pass
+
+    params = inspect_function_signature(f)
+    values = [prompt(p, prompt_optional=False, input_reader=ScriptedInputReader(values=["myapp"])) for p in params]
+    assert values == ["myapp", 8080, False]
+
+
 def test_auto_widget_chooses_correct_widget():
     def f(env: Literal["dev", "prod"] = "dev"):
         pass

@@ -20,21 +20,50 @@ from .introspect import inspect_function_signature
 from .interactive import is_interactive
 from .widgets import prompt, SelectWidget
 
-from typing import Callable, TypeAlias
+from typing import Callable, TypeAlias, overload, Any
 
 # CAUTION: argparse does not expose a public type for subparser collections
 ArgSubparsers: TypeAlias = argparse._SubParsersAction  # Type alias for subparsers in argparse
 
-# Decorator to turn a function into a Cmd instance
-def cmd(fn):
+Fn: TypeAlias = Callable[..., Any]  # Type alias for a callable function that takes any arguments and returns any value
+
+# ---
+# CMD
+# ---
+
+@overload
+def cmd(fn: Fn, *, prompt_optional: bool | None = True) -> Cmd: ...
+@overload
+def cmd(*, prompt_optional: bool | None = True) -> Callable[[Fn], Cmd]: ...
+
+
+def cmd(fn: Fn | None = None, *, prompt_optional: bool | None = True) -> Cmd | Callable[[Fn], Cmd]:
     """Use the function signature to create a command-line interface"""
-    return Cmd(fn)
+
+    # If a function is provided, create a Cmd instance immediately
+    if fn is not None:
+        return Cmd(fn, prompt_optional=prompt_optional)
+
+    # Otherwise, return a decorator for later use
+    def decorator(f: Fn) -> Cmd:
+        return Cmd(f, prompt_optional=prompt_optional)    
+    return decorator
+
 
 class Cmd:
-    def __init__(self, fn):
+    """Represents a command-line command, wrapping a Python function and providing argument parsing and interactive prompting"""
+
+    def __init__(self, fn: Fn, *, prompt_optional: bool | None = True):
         self.fn = fn
         self.params = inspect_function_signature(fn)
         self.description = fn.__doc__
+        self.prompt_optional = prompt_optional
+
+
+    # Allow the Cmd instance to be called like a function, forwarding arguments to the underlying function
+    def __call__(self, *args, **kwargs):
+        return self.fn(*args, **kwargs)
+
 
     def run(self, argv=None):
         """Run the command with the provided arguments or prompt interactively if no arguments are given"""
@@ -57,29 +86,42 @@ class Cmd:
         kwargs = {param.name: getattr(args, param.name) for param in self.params}
         return self.fn(**kwargs)
 
+
     def run_wizard(self):
         """Run an interactive wizard to prompt the user for each parameter"""
         kwargs = {}
         for param in self.params:
-            kwargs[param.name] = prompt(param)
+            kwargs[param.name] = prompt(param, prompt_optional=bool(self.prompt_optional))
         return self.fn(**kwargs)
-    
+
+
     def attach_to_parser(self, subparsers: ArgSubparsers, name: str):
         """Attach this command's parser to a provided parent command's subparsers, allowing for nested commands"""
         parser = subparsers.add_parser(name, description=self.description, help=self.description)
         build_parser(self.params, parser=parser)
+
+
+# ---
+# CLI
+# ---
 
 class CLI:
     def __init__(self, description: str | None = None):
         self.description = description  # Optional description for the CLI, used in the help message
         self.commands = {}  # Dictionary to hold command names and their corresponding Cmd instances
 
-    def subcmd(self, fn: Callable | None = None, *, name: str | None =None, description: str | None = None):
+
+    @overload
+    def subcmd(self, fn: Fn, *, name: str | None = None, description: str | None = None, prompt_optional: bool | None = True) -> Fn: ...
+    @overload
+    def subcmd(self, *, name: str | None = None, description: str | None = None, prompt_optional: bool | None = True) -> Callable[[Fn], Fn]: ...
+
+    def subcmd(self, fn: Fn | None = None, *, name: str | None =None, description: str | None = None, prompt_optional: bool | None = True):
         """Decorator to register a function as a subcommand of the CLI"""
 
-        def decorator(fn: Callable):
+        def decorator(fn: Fn) -> Fn:
             cmd_name = name or fn.__name__      # Use the provided name or the function's name as the command name
-            cmd = Cmd(fn)                       # Create a Cmd instance 
+            cmd = Cmd(fn, prompt_optional=prompt_optional)  # Create a Cmd instance 
             # Set the description if provided (otherwise, it will default to the function's docstring)
             if description is not None:
                 cmd.description = description
@@ -91,11 +133,13 @@ class CLI:
 
         return decorator  # Otherwise, return the decorator for later use
 
+
     def group(self, name: str, description: str | None = None):
         """Creates a subcommand group, allowing for nested commands"""
         group_cli = CLI(description=description)  # Create a new CLI instance for the group
         self.commands[name] = group_cli           # Register the group as a command in the parent CLI
         return group_cli                          # Return the group CLI for further command registration
+
 
     def run(self, argv: list[str] | None = None):
         """Runs the CLI, parsing the command-line arguments and dispatching to the appropriate subcommand"""
@@ -128,6 +172,7 @@ class CLI:
         # If a valid command is provided, dispatch to the corresponding Cmd instance's run method with the remaining arguments
         cmdname, *rest = argv
         return self.commands[cmdname].run(rest) 
+
 
     def attach_to_parser(self, subparsers: ArgSubparsers, name: str):
         """Attach this CLI's parser to a provided parent command's subparsers, allowing for nested commands"""

@@ -26,7 +26,7 @@ class Spec:
     # Attributes
     short: str | None = None            # A short name for this parameter (e.g., a single-letter flag)
     help: str | None = None             # The help message to show for this parameter
-    prompt: str | None = None           # The prompt message to show when asking for this parameter
+    prompt: str | bool | None = None    # The prompt message to show when asking for this parameter; False to skip prompting, True to force prompt
     secret: bool = False                # Whether this parameter is a secret (e.g., a password) and should be hidden when prompting
 
     # Validation constraints
