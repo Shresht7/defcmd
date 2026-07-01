@@ -121,6 +121,68 @@ def test_cli_subcmd_description_falls_back_to_docstring():
     assert cli.commands["greet"].description == "docstring desc"
 
 
+def test_cmd_help_override():
+    @cmd(help="short help")
+    def deploy(host: str, port: int = 8080):
+        """docstring desc"""
+
+    assert deploy.help == "short help"
+
+
+def test_cmd_help_falls_back_to_description():
+    @cmd(description="long desc")
+    def deploy(host: str, port: int = 8080):
+        """docstring desc"""
+
+    assert deploy.help == "long desc"
+
+
+def test_cmd_help_falls_back_to_docstring():
+    @cmd
+    def deploy(host: str, port: int = 8080):
+        """docstring desc"""
+
+    assert deploy.help == "docstring desc"
+
+
+def test_cmd_help_defaults_to_none():
+    @cmd
+    def deploy(host: str, port: int = 8080):
+        pass
+
+    assert deploy.help is None
+
+
+def test_cli_subcmd_help_override():
+    cli = CLI()
+
+    @cli.subcmd(help="short help")
+    def greet(name: str):
+        """docstring desc"""
+
+    assert cli.commands["greet"].help == "short help"
+
+
+def test_cli_subcmd_help_falls_back_to_description():
+    cli = CLI()
+
+    @cli.subcmd(description="long desc")
+    def greet(name: str):
+        """docstring desc"""
+
+    assert cli.commands["greet"].help == "long desc"
+
+
+def test_cli_subcmd_help_falls_back_to_docstring():
+    cli = CLI()
+
+    @cli.subcmd
+    def greet(name: str):
+        """docstring desc"""
+
+    assert cli.commands["greet"].help == "docstring desc"
+
+
 def test_cli_subcmd_prompt_optional_false(monkeypatch):
     cli = CLI()
     calls = []
