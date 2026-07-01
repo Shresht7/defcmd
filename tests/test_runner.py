@@ -1,3 +1,4 @@
+import pytest
 from defcmd.runner import cmd, CLI
 from defcmd.spec import Spec
 from typing import Annotated
@@ -299,6 +300,49 @@ def test_cli_subcmd_hidden_still_callable_via_argv(monkeypatch):
 
     cli.run(["greet", "Alice"])
     assert calls == ["Alice"]
+
+
+def test_cmd_version_override():
+    @cmd(version="1.0.0")
+    def deploy(host: str):
+        pass
+
+    assert deploy.version == "1.0.0"
+
+
+def test_cmd_version_defaults_to_none():
+    @cmd
+    def deploy(host: str):
+        pass
+
+    assert deploy.version is None
+
+
+def test_cmd_version_flag(monkeypatch):
+    @cmd(version="1.0.0")
+    def deploy(host: str):
+        pass
+
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
+
+    with pytest.raises(SystemExit) as exc:
+        deploy.run(["--version"])
+    assert exc.value.code == 0
+
+
+def test_cli_version_override():
+    cli = CLI(version="2.0.0")
+    assert cli.version == "2.0.0"
+
+
+def test_cli_version_flag(monkeypatch):
+    cli = CLI(version="2.0.0")
+
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
+
+    with pytest.raises(SystemExit) as exc:
+        cli.run(["--version"])
+    assert exc.value.code == 0
 
 
 def test_cli_subcmd_prompt_optional_false(monkeypatch):

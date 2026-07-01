@@ -35,6 +35,7 @@ class CmdOptions(TypedDict, total=False):
     epilog: str | None
     aliases: list[str] | None
     hidden: bool
+    version: str | None
     prompt_optional: bool | None
 
 
@@ -64,7 +65,7 @@ def cmd(fn: Fn | None = None, **kwargs: Unpack[CmdOptions]) -> Cmd | Callable[[F
 class Cmd:
     """Represents a command-line command, wrapping a Python function and providing argument parsing and interactive prompting"""
 
-    def __init__(self, fn: Fn, *, help: str | None = None, description: str | None = None, epilog: str | None = None, aliases: list[str] | None = None, hidden: bool = False, prompt_optional: bool | None = True):
+    def __init__(self, fn: Fn, *, help: str | None = None, description: str | None = None, epilog: str | None = None, aliases: list[str] | None = None, hidden: bool = False, version: str | None = None, prompt_optional: bool | None = True):
         self.fn = fn
         self.params = inspect_function_signature(fn)
         self.description = description or fn.__doc__
@@ -72,6 +73,7 @@ class Cmd:
         self.epilog = epilog
         self.aliases = aliases
         self.hidden = hidden
+        self.version = version
         self.prompt_optional = prompt_optional
 
 
@@ -95,6 +97,8 @@ class Cmd:
 
         # Build the argument parser based on the function's parameters and parse the provided arguments
         parser = build_parser(self.params, description=self.description, epilog=self.epilog)
+        if self.version:
+            parser.add_argument("-v", "--version", action="version", version=self.version)
         args = parser.parse_args(argv)
 
         # Extract the parsed arguments and call the function with them
@@ -124,6 +128,7 @@ class CLI:
     def __init__(self, **kwargs: Unpack[CmdOptions]):
         self.description = kwargs.get("description")
         self.help = kwargs.get("help") or self.description
+        self.version = kwargs.get("version")
         self.commands = {}
 
 
@@ -181,6 +186,8 @@ class CLI:
             subparsers = parser.add_subparsers(required=True)
             for name, cmd in self.commands.items():
                 cmd.attach_to_parser(subparsers, name)
+            if self.version:
+                parser.add_argument("-v", "--version", action="version", version=self.version)
             parser.parse_args(argv)  # handles --help, missing cmd, invalid cmd
 
         # If a valid command is provided, dispatch to the corresponding Cmd instance's run method with the remaining arguments
