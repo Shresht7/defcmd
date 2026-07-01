@@ -373,7 +373,7 @@ uv sync
 
 ```
 ./
-├── example/
+├── examples/
 │   ├── 00_basic.py
 │   ├── 01_annotated.py
 │   ├── 02_subcommands.py
@@ -411,10 +411,10 @@ to run `pytest-cov` for coverage report:
 uv run pytest --cov=defcmd --cov-report=term-missing # or --cov-report=html
 ```
 
-The `example/` directory contains small manual scripts for trying behavior in a real terminal. `example/00_basic.py` shows the basic API, while `example/01_annotated.py` shows `Annotated[..., Spec(...)]` metadata such as help text, custom prompts, secret input, and short flags. These examples are not part of the test suite, but they are useful for manually trying interactive behavior in a real tty.
+The `examples/` directory contains small manual scripts for trying behavior in a real terminal. `examples/00_basic.py` shows the basic API, while `examples/01_annotated.py` shows `Annotated[..., Spec(...)]` metadata such as help text, custom prompts, secret input, and short flags. These examples are not part of the test suite, but they are useful for manually trying interactive behavior in a real tty.
 
 ```sh
-uv run python example/00_basic.py
+uv run python examples/00_basic.py
 ```
 
 ---
