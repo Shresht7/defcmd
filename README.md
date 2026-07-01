@@ -72,14 +72,14 @@ if __name__ == "__main__":
 
 #### `@cmd` parameters
 
-| Parameter         | Type                 | Default  | Description                                            |
-| ----------------- | -------------------- | -------- | ------------------------------------------------------ |
-| `description`     | `str \| None`        | `fn.__doc__` | Override the help description for `--help`.       |
-| `help`            | `str \| None`        | `description` → `fn.__doc__` | Short help text for subcommand listings. |
-| `epilog`          | `str \| None`        | `None`   | Text displayed after argument help in `--help`.        |
-| `version`         | `str \| None`        | `None`   | Adds `--version` / `-v` flag that prints and exits.    |
-| `hidden`          | `bool`               | `False`  | Exclude from interactive command selection.            |
-| `prompt_optional` | `bool \| None`       | `True`   | Skip prompting for optional parameters in interactive mode. |
+| Parameter         | Type           | Default                      | Description                                                 |
+| ----------------- | -------------- | ---------------------------- | ----------------------------------------------------------- |
+| `description`     | `str \| None`  | `fn.__doc__`                 | Override the help description for `--help`.                 |
+| `help`            | `str \| None`  | `description` → `fn.__doc__` | Short help text for subcommand listings.                    |
+| `epilog`          | `str \| None`  | `None`                       | Text displayed after argument help in `--help`.             |
+| `version`         | `str \| None`  | `None`                       | Adds `--version` / `-v` flag that prints and exits.         |
+| `hidden`          | `bool`         | `False`                      | Exclude from interactive command selection.                 |
+| `prompt_optional` | `bool \| None` | `True`                       | Skip prompting for optional parameters in interactive mode. |
 
 ```python
 @cmd(description="Deploy the app", version="1.0.0", hidden=True)
@@ -298,10 +298,10 @@ Project 'myapp' created
 
 The `@cli.subcmd` decorator accepts all `@cmd` parameters plus:
 
-| Parameter | Type            | Default          | Description                                |
-| --------- | --------------- | ---------------- | ------------------------------------------ |
-| `name`    | `str \| None`   | `fn.__name__`    | Override the subcommand name.              |
-| `aliases` | `list[str] \| None` | `None`       | Alternative names for the subcommand (`add_parser(aliases=...)`). |
+| Parameter | Type                | Default       | Description                                                       |
+| --------- | ------------------- | ------------- | ----------------------------------------------------------------- |
+| `name`    | `str \| None`       | `fn.__name__` | Override the subcommand name.                                     |
+| `aliases` | `list[str] \| None` | `None`        | Alternative names for the subcommand (`add_parser(aliases=...)`). |
 
 `CLI(...)` also accepts `description`, `help`, and `version` for the top-level CLI parser.
 
