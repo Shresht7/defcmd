@@ -77,6 +77,50 @@ def test_cmd_prompt_optional_false_with_spec_prompt_true_override(monkeypatch):
     assert calls == [("myhost", 9090, False)]
 
 
+def test_cmd_description_override():
+    @cmd(description="custom desc")
+    def deploy(host: str, port: int = 8080):
+        """docstring desc"""
+
+    assert deploy.description == "custom desc"
+
+
+def test_cmd_description_falls_back_to_docstring():
+    @cmd
+    def deploy(host: str, port: int = 8080):
+        """docstring desc"""
+
+    assert deploy.description == "docstring desc"
+
+
+def test_cmd_description_defaults_to_none_when_no_docstring():
+    @cmd
+    def deploy(host: str, port: int = 8080):
+        pass
+
+    assert deploy.description is None
+
+
+def test_cli_subcmd_description_override():
+    cli = CLI()
+
+    @cli.subcmd(description="custom desc")
+    def greet(name: str):
+        """docstring desc"""
+
+    assert cli.commands["greet"].description == "custom desc"
+
+
+def test_cli_subcmd_description_falls_back_to_docstring():
+    cli = CLI()
+
+    @cli.subcmd
+    def greet(name: str):
+        """docstring desc"""
+
+    assert cli.commands["greet"].description == "docstring desc"
+
+
 def test_cli_subcmd_prompt_optional_false(monkeypatch):
     cli = CLI()
     calls = []

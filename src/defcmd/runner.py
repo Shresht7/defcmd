@@ -32,31 +32,31 @@ Fn: TypeAlias = Callable[..., Any]  # Type alias for a callable function that ta
 # ---
 
 @overload
-def cmd(fn: Fn, *, prompt_optional: bool | None = True) -> Cmd: ...
+def cmd(fn: Fn, *, description: str | None = None, prompt_optional: bool | None = True) -> Cmd: ...
 @overload
-def cmd(*, prompt_optional: bool | None = True) -> Callable[[Fn], Cmd]: ...
+def cmd(*, description: str | None = None, prompt_optional: bool | None = True) -> Callable[[Fn], Cmd]: ...
 
 
-def cmd(fn: Fn | None = None, *, prompt_optional: bool | None = True) -> Cmd | Callable[[Fn], Cmd]:
+def cmd(fn: Fn | None = None, *, description: str | None = None, prompt_optional: bool | None = True) -> Cmd | Callable[[Fn], Cmd]:
     """Use the function signature to create a command-line interface"""
 
     # If a function is provided, create a Cmd instance immediately
     if fn is not None:
-        return Cmd(fn, prompt_optional=prompt_optional)
+        return Cmd(fn, description=description, prompt_optional=prompt_optional)
 
     # Otherwise, return a decorator for later use
     def decorator(f: Fn) -> Cmd:
-        return Cmd(f, prompt_optional=prompt_optional)    
+        return Cmd(f, description=description, prompt_optional=prompt_optional)    
     return decorator
 
 
 class Cmd:
     """Represents a command-line command, wrapping a Python function and providing argument parsing and interactive prompting"""
 
-    def __init__(self, fn: Fn, *, prompt_optional: bool | None = True):
+    def __init__(self, fn: Fn, *, description: str | None = None, prompt_optional: bool | None = True):
         self.fn = fn
         self.params = inspect_function_signature(fn)
-        self.description = fn.__doc__
+        self.description = description or fn.__doc__
         self.prompt_optional = prompt_optional
 
 
@@ -120,11 +120,8 @@ class CLI:
         """Decorator to register a function as a subcommand of the CLI"""
 
         def decorator(fn: Fn) -> Fn:
-            cmd_name = name or fn.__name__      # Use the provided name or the function's name as the command name
-            cmd = Cmd(fn, prompt_optional=prompt_optional)  # Create a Cmd instance 
-            # Set the description if provided (otherwise, it will default to the function's docstring)
-            if description is not None:
-                cmd.description = description
+            cmd_name = name or fn.__name__
+            cmd = Cmd(fn, description=description, prompt_optional=prompt_optional) 
             self.commands[cmd_name] = cmd       # Store the command in the CLI's commands dictionary
             return fn
 
