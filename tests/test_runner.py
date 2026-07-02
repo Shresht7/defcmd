@@ -359,3 +359,74 @@ def test_cli_subcmd_prompt_optional_false(monkeypatch):
 
     cli.run([])
     assert calls == [("Alice", 1)]
+
+
+# EXAMPLES
+# --------
+
+
+def test_cmd_examples_in_help(capsys):
+    @cmd(examples={"Say hello to Alice": "greet Alice"})
+    def greet(name: str):
+        pass
+
+    with pytest.raises(SystemExit):
+        greet.run(["--help"])
+    out = capsys.readouterr().out
+    assert "examples:" in out
+    assert "greet Alice        # Say hello to Alice" in out
+
+
+def test_cmd_examples_with_epilog(capsys):
+    @cmd(
+        examples={"Say hello to Alice": "greet Alice"},
+        epilog="See the docs for more info.",
+    )
+    def greet(name: str):
+        pass
+
+    with pytest.raises(SystemExit):
+        greet.run(["--help"])
+    out = capsys.readouterr().out
+    assert "examples:" in out
+    assert "greet Alice        # Say hello to Alice" in out
+    assert "See the docs for more info." in out
+
+
+def test_cmd_examples_none_omits_block(capsys):
+    @cmd
+    def greet(name: str):
+        pass
+
+    with pytest.raises(SystemExit):
+        greet.run(["--help"])
+    out = capsys.readouterr().out
+    assert "examples:" not in out
+
+
+def test_cli_top_level_examples_in_help(capsys):
+    cli = CLI(examples={"Say hello": "greet Alice"})
+
+    @cli.subcmd
+    def greet(name: str):
+        pass
+
+    with pytest.raises(SystemExit):
+        cli.run(["--help"])
+    out = capsys.readouterr().out
+    assert "examples:" in out
+    assert "greet Alice        # Say hello" in out
+
+
+def test_cli_subcommand_examples_in_help(capsys):
+    cli = CLI()
+
+    @cli.subcmd(examples={"With feeling": "greet Alice"})
+    def greet(name: str):
+        pass
+
+    with pytest.raises(SystemExit):
+        cli.run(["greet", "--help"])
+    out = capsys.readouterr().out
+    assert "examples:" in out
+    assert "greet Alice        # With feeling" in out

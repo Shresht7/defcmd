@@ -1,7 +1,7 @@
 import pytest
 
 from defcmd.introspect import inspect_function_signature
-from defcmd.argparser import build_parser
+from defcmd.argparser import build_parser, build_argparse_epilog, generate_examples_block
 from defcmd.spec import Spec
 
 from typing import Annotated, Literal
@@ -218,3 +218,48 @@ def test_spec_env_none_uses_function_default(monkeypatch):
     parser = build_parser(inspect_function_signature(f))
     args = parser.parse_args([])
     assert args.port == 8080  # The function default is used since the env var is not set
+
+
+# EXAMPLES
+# --------
+
+
+def test_generate_examples_block_returns_formatted_block():
+    examples = {"Say hello": "greet Alice", "Say goodbye": "greet Bob"}
+    result = generate_examples_block(examples)
+    assert result is not None
+    assert result.startswith("\nexamples:")
+    assert "greet Alice        # Say hello" in result
+    assert "greet Bob          # Say goodbye" in result
+
+
+def test_generate_examples_block_none_returns_none():
+    assert generate_examples_block(None) is None
+
+
+def test_generate_examples_block_empty_returns_none():
+    assert generate_examples_block({}) is None
+
+
+def test_build_argparse_epilog_examples_only():
+    result = build_argparse_epilog(None, {"Say hello": "greet Alice"})
+    assert result is not None
+    assert result.startswith("\nexamples:")
+    assert "greet Alice        # Say hello" in result
+
+
+def test_build_argparse_epilog_examples_with_epilog():
+    result = build_argparse_epilog("See the docs.", {"Say hello": "greet Alice"})
+    assert result is not None
+    assert "examples:" in result
+    assert "greet Alice        # Say hello" in result
+    assert "See the docs." in result
+
+
+def test_build_argparse_epilog_epilog_only():
+    result = build_argparse_epilog("See the docs.", None)
+    assert result == "See the docs."
+
+
+def test_build_argparse_epilog_none():
+    assert build_argparse_epilog(None, None) is None
