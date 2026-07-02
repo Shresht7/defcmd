@@ -45,7 +45,9 @@ def build_parser(params: list[Parameter], description: str | None = None, parser
         default = param.default if not param.required else None
         # If the parameter has a Spec with an env attribute, attempt to resolve the value from the environment variables
         if param.spec and param.spec.env:
-            default = resolve_env(param.spec.env)
+            raw = resolve_env(param.spec.env)
+            if raw is not None:
+                default = parse_value(param, raw)
 
         # Handle boolean parameters with a special action that creates both --flag and --no-flag options and sets the default value appropriately
         if param.annotation is bool:
@@ -60,8 +62,8 @@ def build_parser(params: list[Parameter], description: str | None = None, parser
         if origin is Literal:
             kwargs["choices"] = list(get_args(param.annotation))
 
-        # If the parameter is required and has no default, add it as a positional argument...
-        if param.required and param.default is None:
+        # If the parameter is required and has no default (from env or function), add it as a positional argument...
+        if param.required and default is None:
             parser.add_argument(param.name, **kwargs)
         # ...otherwise, add it as an optional argument with the appropriate flags and default value
         else:
@@ -86,7 +88,7 @@ def _make_type_converter(param: Parameter) -> Callable[[str], object]:
     return type_fn
 
 
-def resolve_env(env: str | tuple[str]) -> str | None:
+def resolve_env(env: str | tuple[str, ...]) -> str | None:
     """
     Resolve the value of an environment variable or a tuple of environment variables.
     If a tuple is provided, the first one that is set will be returned.
