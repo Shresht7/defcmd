@@ -222,19 +222,19 @@ Payload: Hello World
 Enter your token: ********
 # ... Your Logic Here ...
 ```
-
 #### Specification Options
 
-| Spec       | Description                                              | Overrides                |
-| ---------- | -------------------------------------------------------- | ------------------------ |
-| `short`    | Short flag for the parameter (e.g., `-p`).               |                          |
-| `help`     | Help text for the parameter, shown in `--help`.          | The default help message |
-| `prompt`   | Custom prompt text, `True` to force, `False` to skip.    | The default prompt text  |
-| `secret`   | If `True`, input is hidden in interactive mode.          |                          |
-| `min`      | Minimum numeric value (inclusive).                       |                          |
-| `max`      | Maximum numeric value (inclusive).                       |                          |
-| `pattern`  | A regex pattern the value must match (uses `fullmatch`). |                          |
-| `validate` | A custom validation function for the parameter.          |                          |
+| Spec       | Description                                             | Overrides                    |
+| ---------- | ------------------------------------------------------- | ---------------------------- |
+| `short`    | Short flag for the parameter (e.g., `-p`)               |                              |
+| `help`     | Help text for the parameter, shown in `--help`          | The default help message     |
+| `prompt`   | Custom prompt text, `True` to force, `False` to skip    | The default prompt text      |
+| `secret`   | If `True`, input is hidden in interactive mode          |                              |
+| `env`      | Environment variable(s) to read a default value from    | The function's default value |
+| `min`      | Minimum numeric value (inclusive)                       |                              |
+| `max`      | Maximum numeric value (inclusive)                       |                              |
+| `pattern`  | A regex pattern the value must match (uses `fullmatch`) |                              |
+| `validate` | A custom validation function for the parameter          |                              |
 
 ### Subcommands
 
@@ -374,6 +374,32 @@ $ python tool.py container logs follow my_container
 ```
 
 Interactive mode works with groups, it recursively prompts until it reaches a leaf command, then runs its wizard.
+
+### Environment Variables
+
+Environment variables provide default values that can be overridden by CLI arguments:
+
+```python
+from defcmd import cmd
+from defcmd.spec import Spec
+from typing import Annotated
+
+@cmd
+def deploy(
+    host: Annotated[str, Spec(env="HOST")],
+    port: Annotated[int, Spec(env=("PORT", "APP_PORT"))] = 8080,
+):
+    ...
+```
+
+```sh
+$ export HOST=example.com
+$ python deploy.py             # uses HOST env var
+$ python deploy.py other.com   # CLI arg overrides env
+```
+
+If the env var is not set, the function's default (or a required positional error) applies. A tuple tries each variable name in order and uses the first one found. CLI arguments always take precedence over env vars.
+
 
 ---
 
