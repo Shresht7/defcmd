@@ -1,7 +1,15 @@
 import pytest
+import re
+
 from defcmd.runner import cmd, CLI
 from defcmd.spec import Spec
 from typing import Annotated
+
+
+_ansi_re = re.compile(r"\x1b\[[0-9;]*m")
+
+def strip_ansi(text: str) -> str:
+    return _ansi_re.sub("", text)
 
 def test_full_argv_runs_without_prompting(monkeypatch):
     calls = []
@@ -372,7 +380,7 @@ def test_cmd_examples_in_help(capsys):
 
     with pytest.raises(SystemExit):
         greet.run(["--help"])
-    out = capsys.readouterr().out
+    out = strip_ansi(capsys.readouterr().out)
     assert "examples:" in out
     assert "greet Alice        # Say hello to Alice" in out
 
@@ -387,7 +395,7 @@ def test_cmd_examples_with_epilog(capsys):
 
     with pytest.raises(SystemExit):
         greet.run(["--help"])
-    out = capsys.readouterr().out
+    out = strip_ansi(capsys.readouterr().out)
     assert "examples:" in out
     assert "greet Alice        # Say hello to Alice" in out
     assert "See the docs for more info." in out
@@ -400,7 +408,7 @@ def test_cmd_examples_none_omits_block(capsys):
 
     with pytest.raises(SystemExit):
         greet.run(["--help"])
-    out = capsys.readouterr().out
+    out = strip_ansi(capsys.readouterr().out)
     assert "examples:" not in out
 
 
@@ -413,7 +421,7 @@ def test_cli_top_level_examples_in_help(capsys):
 
     with pytest.raises(SystemExit):
         cli.run(["--help"])
-    out = capsys.readouterr().out
+    out = strip_ansi(capsys.readouterr().out)
     assert "examples:" in out
     assert "greet Alice        # Say hello" in out
 
@@ -427,6 +435,6 @@ def test_cli_subcommand_examples_in_help(capsys):
 
     with pytest.raises(SystemExit):
         cli.run(["greet", "--help"])
-    out = capsys.readouterr().out
+    out = strip_ansi(capsys.readouterr().out)
     assert "examples:" in out
     assert "greet Alice        # With feeling" in out

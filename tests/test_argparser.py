@@ -10,6 +10,8 @@ from typing import Annotated, Literal
 
 _ansi_re = re.compile(r"\x1b\[[0-9;]*m")
 
+# TODO: Should probably be part of the `terminal` module, but for now it's here to help with testing the examples block formatting
+# It should also probably use a while loop to walk the string instead of using regex, but this is good enough for now. 
 def strip_ansi(text: str) -> str:
     return _ansi_re.sub("", text)
 
@@ -235,9 +237,10 @@ def test_generate_examples_block_returns_formatted_block():
     examples = {"Say hello": "greet Alice", "Say goodbye": "greet Bob"}
     result = generate_examples_block(examples)
     assert result is not None
-    assert result.startswith("\nexamples:")
-    assert "greet Alice        # Say hello" in result
-    assert "greet Bob          # Say goodbye" in result
+    plain = strip_ansi(result)
+    assert plain.startswith("\nexamples:")
+    assert "greet Alice        # Say hello" in plain
+    assert "greet Bob          # Say goodbye" in plain
 
 
 def test_generate_examples_block_none_returns_none():
@@ -251,16 +254,18 @@ def test_generate_examples_block_empty_returns_none():
 def test_build_argparse_epilog_examples_only():
     result = build_argparse_epilog(None, {"Say hello": "greet Alice"})
     assert result is not None
-    assert result.startswith("\nexamples:")
-    assert "greet Alice        # Say hello" in result
+    plain = strip_ansi(result)
+    assert plain.startswith("\nexamples:")
+    assert "greet Alice        # Say hello" in plain
 
 
 def test_build_argparse_epilog_examples_with_epilog():
     result = build_argparse_epilog("See the docs.", {"Say hello": "greet Alice"})
     assert result is not None
-    assert "examples:" in result
-    assert "greet Alice        # Say hello" in result
-    assert "See the docs." in result
+    plain = strip_ansi(result)
+    assert "examples:" in plain
+    assert "greet Alice        # Say hello" in plain
+    assert "See the docs." in plain
 
 
 def test_build_argparse_epilog_epilog_only():
