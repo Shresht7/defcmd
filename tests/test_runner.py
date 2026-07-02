@@ -438,3 +438,56 @@ def test_cli_subcommand_examples_in_help(capsys):
     out = strip_ansi(capsys.readouterr().out)
     assert "examples:" in out
     assert "greet Alice        # With feeling" in out
+
+
+def test_cmd_examples_flag_suppressed(capsys):
+    @cmd(examples={"Say hello to Alice": "greet Alice"}, add_examples_flag=False)
+    def greet(name: str):
+        pass
+
+    with pytest.raises(SystemExit):
+        greet.run(["--help"])
+    out = strip_ansi(capsys.readouterr().out)
+    assert "--examples" not in out
+    assert "examples:" in out
+    assert "greet Alice        # Say hello to Alice" in out
+
+
+def test_cmd_examples_flag_default(capsys):
+    @cmd(examples={"Say hello to Alice": "greet Alice"})
+    def greet(name: str):
+        pass
+
+    with pytest.raises(SystemExit):
+        greet.run(["--help"])
+    out = strip_ansi(capsys.readouterr().out)
+    assert "--examples" in out
+
+
+def test_cli_top_level_examples_flag_suppressed(capsys):
+    cli = CLI(examples={"Say hello": "greet Alice"}, add_examples_flag=False)
+
+    @cli.subcmd
+    def greet(name: str):
+        pass
+
+    with pytest.raises(SystemExit):
+        cli.run(["--help"])
+    out = strip_ansi(capsys.readouterr().out)
+    assert "--examples" not in out
+    assert "examples:" in out
+
+
+def test_cli_subcommand_examples_flag_suppressed(capsys):
+    cli = CLI()
+
+    @cli.subcmd(examples={"With feeling": "greet Alice"}, add_examples_flag=False)
+    def greet(name: str):
+        pass
+
+    with pytest.raises(SystemExit):
+        cli.run(["greet", "--help"])
+    out = strip_ansi(capsys.readouterr().out)
+    assert "--examples" not in out
+    assert "examples:" in out
+    assert "greet Alice        # With feeling" in out

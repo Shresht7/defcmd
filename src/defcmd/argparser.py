@@ -27,7 +27,8 @@ def build_parser(
         description: str | None = None,
         parser: argparse.ArgumentParser | None = None,
         examples: dict[str, str] | None = None,
-        epilog: str | None = None
+        epilog: str | None = None,
+        add_examples_flag: bool = True,
     ) -> argparse.ArgumentParser:
     """Build an `argparse.ArgumentParser` based on the list of `Parameter` objects extracted from a function signature"""
 
@@ -47,7 +48,7 @@ def build_parser(
 
 
     # If examples are provided, expose a `--examples` flag that prints the examples block and exits
-    if examples:
+    if examples and add_examples_flag:
         parser.add_argument(
             "--examples",
             action=_ExamplesAction,

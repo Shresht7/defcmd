@@ -38,6 +38,7 @@ class CmdOptions(TypedDict, total=False):
     hidden: bool
     version: str | None
     prompt_optional: bool | None
+    add_examples_flag: bool
 
 
 # ---
@@ -77,6 +78,7 @@ class Cmd:
         self.hidden = kwargs.get("hidden", False)
         self.version = kwargs.get("version")
         self.prompt_optional = kwargs.get("prompt_optional", True)
+        self.add_examples_flag = kwargs.get("add_examples_flag", True)
 
 
     # Allow the Cmd instance to be called like a function, forwarding arguments to the underlying function
@@ -98,7 +100,7 @@ class Cmd:
         # Otherwise, run the command with the provided arguments
 
         # Build the argument parser based on the function's parameters and parse the provided arguments
-        parser = build_parser(self.params, description=self.description, examples=self.examples, epilog=self.epilog)
+        parser = build_parser(self.params, description=self.description, examples=self.examples, epilog=self.epilog, add_examples_flag=self.add_examples_flag)
         if self.version:
             parser.add_argument("-v", "--version", action="version", version=self.version)
         args = parser.parse_args(argv)
@@ -120,7 +122,7 @@ class Cmd:
         """Attach this command's parser to a provided parent command's subparsers, allowing for nested commands"""
         epilog = build_argparse_epilog(self.epilog, self.examples)
         parser = subparsers.add_parser(name, description=self.description, help=self.help, aliases=self.aliases or [], epilog=epilog)
-        build_parser(self.params, parser=parser, examples=self.examples)
+        build_parser(self.params, parser=parser, examples=self.examples, add_examples_flag=self.add_examples_flag)
 
 
 # ---
@@ -134,6 +136,7 @@ class CLI:
         self.examples = kwargs.get("examples")
         self.epilog = kwargs.get("epilog")
         self.version = kwargs.get("version")
+        self.add_examples_flag = kwargs.get("add_examples_flag", True)
         self.commands = {}
 
 
@@ -187,7 +190,7 @@ class CLI:
 
         # If no arguments are provided or the first argument is not a registered command, display the help message
         if not argv or argv[0] not in self.commands:
-            parser = build_parser([], description=self.description, examples=self.examples, epilog=self.epilog)
+            parser = build_parser([], description=self.description, examples=self.examples, epilog=self.epilog, add_examples_flag=self.add_examples_flag)
             subparsers = parser.add_subparsers(required=True)
             for name, cmd in self.commands.items():
                 cmd.attach_to_parser(subparsers, name)
