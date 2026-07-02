@@ -160,9 +160,9 @@ class CLI:
         return decorator
 
 
-    def group(self, name: str, description: str | None = None):
+    def group(self, name: str, **kwargs: Unpack[CmdOptions]):
         """Creates a subcommand group, allowing for nested commands"""
-        group_cli = CLI(description=description)  # Create a new CLI instance for the group
+        group_cli = CLI(**kwargs)  # Create a new CLI instance for the group
         self.commands[name] = group_cli           # Register the group as a command in the parent CLI
         return group_cli                          # Return the group CLI for further command registration
 
@@ -207,6 +207,7 @@ class CLI:
         """Attach this CLI's parser to a provided parent command's subparsers, allowing for nested commands"""
         epilog = build_argparse_epilog(self.epilog, self.examples)
         parser = subparsers.add_parser(name, description=self.description, help=self.help, epilog=epilog)
+        build_parser([], parser=parser, examples=self.examples, add_examples_flag=self.add_examples_flag)
         inner = parser.add_subparsers(dest="__cmd", required=True)
         for subname, subcmd in self.commands.items():
             subcmd.attach_to_parser(inner, subname)

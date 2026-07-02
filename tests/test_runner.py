@@ -491,3 +491,36 @@ def test_cli_subcommand_examples_flag_suppressed(capsys):
     assert "--examples" not in out
     assert "examples:" in out
     assert "greet Alice        # With feeling" in out
+
+
+def test_cli_group_examples_in_help(capsys):
+    cli = CLI()
+
+    db = cli.group("db", examples={"Run migration": "cli db migrate --msg init"})
+
+    @db.subcmd
+    def migrate(msg: str):
+        pass
+
+    with pytest.raises(SystemExit):
+        cli.run(["db", "--help"])
+    out = strip_ansi(capsys.readouterr().out)
+    assert "--examples" in out
+    assert "examples:" in out
+    assert "cli db migrate --msg init" in out
+
+
+def test_cli_group_examples_flag_suppressed(capsys):
+    cli = CLI()
+
+    db = cli.group("db", examples={"Run migration": "cli db migrate --msg init"}, add_examples_flag=False)
+
+    @db.subcmd
+    def migrate(msg: str):
+        pass
+
+    with pytest.raises(SystemExit):
+        cli.run(["db", "--help"])
+    out = strip_ansi(capsys.readouterr().out)
+    assert "--examples" not in out
+    assert "examples:" in out
