@@ -29,13 +29,17 @@ def build_parser(
     ) -> argparse.ArgumentParser:
     """Build an `argparse.ArgumentParser` based on the list of `Parameter` objects extracted from a function signature"""
 
+    # Initialize the parser kwargs dictionary that will be passed to the ArgumentParser constructor
+    argparse_kwargs = {}
+
     # Build the epilog for the argparse help text, including examples if provided
     if examples:
-        epilog = build_argparse_epilog(epilog, examples)
+        argparse_kwargs["epilog"] = build_argparse_epilog(epilog, examples)
+        argparse_kwargs["formatter_class"] = argparse.RawDescriptionHelpFormatter
 
     # If no parser is provided, create a new one with the given description
     if parser is None:
-        parser = argparse.ArgumentParser(description=description, epilog=epilog)
+        parser = argparse.ArgumentParser(description=description, **argparse_kwargs)
 
     for param in params:
 
@@ -122,7 +126,7 @@ def generate_examples_block(examples: dict[str, str] | None) -> str | None:
     cmds = list(examples.items())
     width = max(len(example) for _, example in cmds)
     for description, example in examples.items():
-        lines.append(f"  {example.ljust(width)}  # {description}")
+        lines.append(f"  {example.ljust(width)}        # {description}")
     return "\n".join(lines)
 
 
