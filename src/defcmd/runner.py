@@ -120,7 +120,7 @@ class Cmd:
         """Attach this command's parser to a provided parent command's subparsers, allowing for nested commands"""
         epilog = build_argparse_epilog(self.epilog, self.examples)
         parser = subparsers.add_parser(name, description=self.description, help=self.help, aliases=self.aliases or [], epilog=epilog)
-        build_parser(self.params, parser=parser)
+        build_parser(self.params, parser=parser, examples=self.examples)
 
 
 # ---
