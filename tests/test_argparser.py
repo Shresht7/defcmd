@@ -1,10 +1,17 @@
 import pytest
+import re
 
 from defcmd.introspect import inspect_function_signature
 from defcmd.argparser import build_parser, build_argparse_epilog, generate_examples_block
 from defcmd.spec import Spec
 
 from typing import Annotated, Literal
+
+
+_ansi_re = re.compile(r"\x1b\[[0-9;]*m")
+
+def strip_ansi(text: str) -> str:
+    return _ansi_re.sub("", text)
 
 
 def test_required_str_becomes_positional_argument():

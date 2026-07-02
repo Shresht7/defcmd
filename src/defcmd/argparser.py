@@ -16,9 +16,11 @@ import os
 
 from .introspect import Parameter
 from .convert import ValidationError, parse_value
+from .terminal import dim, cyan
 
 from typing import get_origin, get_args, Literal
 from collections.abc import Callable
+
 
 def build_parser(
         params: list[Parameter],
@@ -122,11 +124,12 @@ def generate_examples_block(examples: dict[str, str] | None) -> str | None:
     """Generate a formatted examples block for the command's help text"""
     if not examples:
         return None
-    lines = ["", "examples:"]
+    lines = ["", cyan("examples:")]
     cmds = list(examples.items())
     width = max(len(example) for _, example in cmds)
     for description, example in examples.items():
-        lines.append(f"  {example.ljust(width)}        # {description}")
+        description = dim(f"# {description}")
+        lines.append(f"  {example.ljust(width)}        {description}")
     return "\n".join(lines)
 
 
