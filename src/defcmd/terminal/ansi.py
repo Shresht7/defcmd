@@ -13,6 +13,8 @@ The module supports:
 - cursor movement and screen manipulation
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 # ANSI escape sequences are used to control text formatting, color, and other output options in terminal emulators.

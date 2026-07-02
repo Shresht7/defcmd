@@ -75,7 +75,12 @@ def raw_mode():
         yield # On Windows, raw mode is not needed for keypress reading (msvcrt is always raw)
     else:
         import tty, termios
-        fd = sys.stdin.fileno()
+        try:
+            fd = sys.stdin.fileno()
+        except OSError:
+            # If stdin is not a terminal (e.g., when running in an CI environment), we cannot enable raw mode.
+            yield
+            return
         old = termios.tcgetattr(fd) # save the current terminal settings
         try:
             tty.setraw(fd)          # set the terminal to raw mode (unbuffered input)
