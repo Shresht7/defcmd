@@ -12,6 +12,7 @@ allowing command-line arguments to be parsed according to the original function 
 from __future__ import annotations
 
 import argparse
+import os
 
 from .introspect import Parameter
 from .convert import ValidationError, parse_value
@@ -40,9 +41,16 @@ def build_parser(params: list[Parameter], description: str | None = None, parser
         if param.spec and param.spec.help:
             kwargs["help"] = param.spec.help
 
+        # Determine the default value
+        default = param.default if not param.required else None
+        # If the parameter has a Spec with an env attribute, attempt to resolve the value from the environment variables
+        if param.spec and param.spec.env:
+            raw = resolve_env(param.spec.env)
+            if raw is not None:
+                default = parse_value(param, raw)
+
         # Handle boolean parameters with a special action that creates both --flag and --no-flag options and sets the default value appropriately
         if param.annotation is bool:
-            default = param.default if not param.required else False
             parser.add_argument(*names, action=argparse.BooleanOptionalAction, default=default, **kwargs)
             continue # Skip the rest of the loop since we've already handled this parameter
 
@@ -54,11 +62,12 @@ def build_parser(params: list[Parameter], description: str | None = None, parser
         if origin is Literal:
             kwargs["choices"] = list(get_args(param.annotation))
 
-        # For required parameters, add a positional argument. For optional parameters, add a flag with the default value.
-        if param.required:
+        # If the parameter is required and has no default (from env or function), add it as a positional argument...
+        if param.required and default is None:
             parser.add_argument(param.name, **kwargs)
+        # ...otherwise, add it as an optional argument with the appropriate flags and default value
         else:
-            parser.add_argument(*names, default=param.default, **kwargs)
+            parser.add_argument(*names, default=default, **kwargs)
 
     return parser
 
@@ -77,3 +86,20 @@ def _make_type_converter(param: Parameter) -> Callable[[str], object]:
         except ValidationError as e:
             raise argparse.ArgumentTypeError(str(e)) from e
     return type_fn
+
+
+def resolve_env(env: str | tuple[str, ...]) -> str | None:
+    """
+    Resolve the value of an environment variable or a tuple of environment variables.
+    If a tuple is provided, the first one that is set will be returned.
+    If none are set, None will be returned.
+    """
+    if isinstance(env, str):
+        return os.environ.get(env)
+    
+    for var in env:
+        value = os.environ.get(var)
+        if value is not None:
+            return value
+    
+    return None

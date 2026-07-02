@@ -124,3 +124,97 @@ def test_custom_validation_function():
     assert parser.parse_args(["--port", "8082"]).port == 8082
     with pytest.raises(SystemExit):
         parser.parse_args(["--port", "8081"])
+
+
+# ENVIRONMENT VARIABLES
+# ---------------------
+
+
+def test_spec_env_single_var_uses_env_value(monkeypatch):
+    monkeypatch.setenv("MYAPP_PORT", "9090")
+
+    def f(port: Annotated[int, Spec(env="MYAPP_PORT")] = 8080):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    args = parser.parse_args([])
+    assert args.port == 9090
+
+
+def test_spec_env_single_var_not_set_uses_default(monkeypatch):
+    monkeypatch.delenv("MYAPP_PORT", raising=False)
+
+    def f(port: Annotated[int, Spec(env="MYAPP_PORT")] = 8080):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    args = parser.parse_args([])
+    assert args.port == 8080
+
+
+def test_spec_env_multiple_vars_uses_first_set(monkeypatch):
+    monkeypatch.setenv("MYAPP_PORT", "9090")
+    monkeypatch.setenv("MYAPP_ALT_PORT", "8080")
+
+    def f(port: Annotated[int, Spec(env=("MYAPP_ALT_PORT", "MYAPP_PORT"))] = 8000):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    args = parser.parse_args([])
+    assert args.port == 8080  # MYAPP_ALT_PORT is checked first and is set
+
+
+def test_spec_env_multiple_vars_none_set_uses_default(monkeypatch):
+    monkeypatch.delenv("MYAPP_PORT", raising=False)
+    monkeypatch.delenv("MYAPP_ALT_PORT", raising=False)
+
+    def f(port: Annotated[int, Spec(env=("MYAPP_ALT_PORT", "MYAPP_PORT"))] = 8000):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    args = parser.parse_args([])
+    assert args.port == 8000  # Default is used since neither env var is set
+
+
+def test_spec_env_required_becomes_optional(monkeypatch):
+    monkeypatch.setenv("MYAPP_PORT", "9090")
+
+    def f(port: Annotated[int, Spec(env="MYAPP_PORT")]):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    args = parser.parse_args([]) # we don't provide the port, but the env var is set, so it should be used
+    assert args.port == 9090  # The env var is used, so the parameter is effectively optional
+
+
+def test_spec_env_cli_arg_overrides_env(monkeypatch):
+    monkeypatch.setenv("MYAPP_PORT", "9090")
+
+    def f(port: Annotated[int, Spec(env="MYAPP_PORT")] = 8080):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    args = parser.parse_args(["--port", "7070"])  # CLI argument should override the environment variable
+    assert args.port == 7070  # The CLI argument is used, not the environment variable
+
+
+def test_spec_env_bool_flag(monkeypatch):
+    monkeypatch.setenv("MYAPP_VERBOSE", "True")
+
+    def f(verbose: Annotated[bool, Spec(env="MYAPP_VERBOSE")] = False):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    args = parser.parse_args([])
+    assert args.verbose is True
+
+
+def test_spec_env_none_uses_function_default(monkeypatch):
+    monkeypatch.delenv("MYAPP_PORT", raising=False)
+
+    def f(port: Annotated[int, Spec(env="MYAPP_PORT")] = 8080):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    args = parser.parse_args([])
+    assert args.port == 8080  # The function default is used since the env var is not set
