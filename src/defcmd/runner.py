@@ -15,7 +15,7 @@ from __future__ import annotations
 import sys
 import argparse
 
-from .argparser import build_parser
+from .argparser import build_parser, build_argparse_epilog
 from .introspect import inspect_function_signature
 from .interactive import is_interactive
 from .widgets import prompt, SelectWidget
@@ -32,11 +32,13 @@ class CmdOptions(TypedDict, total=False):
     """Keyword arguments accepted by @cmd(), @cli.subcmd(), and CLI()."""
     help: str | None
     description: str | None
+    examples: dict[str, str] | None
     epilog: str | None
     aliases: list[str] | None
     hidden: bool
     version: str | None
     prompt_optional: bool | None
+    add_examples_flag: bool
 
 
 # ---
@@ -70,11 +72,13 @@ class Cmd:
         self.params = inspect_function_signature(fn)
         self.description = kwargs.get("description") or fn.__doc__
         self.help = kwargs.get("help") or self.description
+        self.examples = kwargs.get("examples")
         self.epilog = kwargs.get("epilog")
         self.aliases = kwargs.get("aliases")
         self.hidden = kwargs.get("hidden", False)
         self.version = kwargs.get("version")
         self.prompt_optional = kwargs.get("prompt_optional", True)
+        self.add_examples_flag = kwargs.get("add_examples_flag", True)
 
 
     # Allow the Cmd instance to be called like a function, forwarding arguments to the underlying function
@@ -96,7 +100,7 @@ class Cmd:
         # Otherwise, run the command with the provided arguments
 
         # Build the argument parser based on the function's parameters and parse the provided arguments
-        parser = build_parser(self.params, description=self.description, epilog=self.epilog)
+        parser = build_parser(self.params, description=self.description, examples=self.examples, epilog=self.epilog, add_examples_flag=self.add_examples_flag)
         if self.version:
             parser.add_argument("-v", "--version", action="version", version=self.version)
         args = parser.parse_args(argv)
@@ -116,8 +120,9 @@ class Cmd:
 
     def attach_to_parser(self, subparsers: ArgSubparsers, name: str):
         """Attach this command's parser to a provided parent command's subparsers, allowing for nested commands"""
-        parser = subparsers.add_parser(name, description=self.description, help=self.help, epilog=self.epilog, aliases=self.aliases or [])
-        build_parser(self.params, parser=parser)
+        epilog = build_argparse_epilog(self.epilog, self.examples)
+        parser = subparsers.add_parser(name, description=self.description, help=self.help, aliases=self.aliases or [], epilog=epilog)
+        build_parser(self.params, parser=parser, examples=self.examples, add_examples_flag=self.add_examples_flag)
 
 
 # ---
@@ -128,7 +133,10 @@ class CLI:
     def __init__(self, **kwargs: Unpack[CmdOptions]):
         self.description = kwargs.get("description")
         self.help = kwargs.get("help") or self.description
+        self.examples = kwargs.get("examples")
+        self.epilog = kwargs.get("epilog")
         self.version = kwargs.get("version")
+        self.add_examples_flag = kwargs.get("add_examples_flag", True)
         self.commands = {}
 
 
@@ -152,9 +160,9 @@ class CLI:
         return decorator
 
 
-    def group(self, name: str, description: str | None = None):
+    def group(self, name: str, **kwargs: Unpack[CmdOptions]):
         """Creates a subcommand group, allowing for nested commands"""
-        group_cli = CLI(description=description)  # Create a new CLI instance for the group
+        group_cli = CLI(**kwargs)  # Create a new CLI instance for the group
         self.commands[name] = group_cli           # Register the group as a command in the parent CLI
         return group_cli                          # Return the group CLI for further command registration
 
@@ -182,7 +190,7 @@ class CLI:
 
         # If no arguments are provided or the first argument is not a registered command, display the help message
         if not argv or argv[0] not in self.commands:
-            parser = build_parser([], description=self.description)
+            parser = build_parser([], description=self.description, examples=self.examples, epilog=self.epilog, add_examples_flag=self.add_examples_flag)
             subparsers = parser.add_subparsers(required=True)
             for name, cmd in self.commands.items():
                 cmd.attach_to_parser(subparsers, name)
@@ -197,7 +205,9 @@ class CLI:
 
     def attach_to_parser(self, subparsers: ArgSubparsers, name: str):
         """Attach this CLI's parser to a provided parent command's subparsers, allowing for nested commands"""
-        parser = subparsers.add_parser(name, description=self.description, help=self.help)
+        epilog = build_argparse_epilog(self.epilog, self.examples)
+        parser = subparsers.add_parser(name, description=self.description, help=self.help, epilog=epilog)
+        build_parser([], parser=parser, examples=self.examples, add_examples_flag=self.add_examples_flag)
         inner = parser.add_subparsers(dest="__cmd", required=True)
         for subname, subcmd in self.commands.items():
             subcmd.attach_to_parser(inner, subname)

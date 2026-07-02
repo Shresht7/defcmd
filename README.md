@@ -76,16 +76,64 @@ if __name__ == "__main__":
 | ----------------- | -------------- | ---------------------------- | ----------------------------------------------------------- |
 | `description`     | `str \| None`  | `fn.__doc__`                 | Override the help description for `--help`.                 |
 | `help`            | `str \| None`  | `description` → `fn.__doc__` | Short help text for subcommand listings.                    |
+| `examples`        | `dict[str, str] \| None` | `None`         | Usage examples shown in `--help` via `--examples` flag.     |
 | `epilog`          | `str \| None`  | `None`                       | Text displayed after argument help in `--help`.             |
 | `version`         | `str \| None`  | `None`                       | Adds `--version` / `-v` flag that prints and exits.         |
 | `hidden`          | `bool`         | `False`                      | Exclude from interactive command selection.                 |
 | `prompt_optional` | `bool \| None` | `True`                       | Skip prompting for optional parameters in interactive mode. |
+| `add_examples_flag` | `bool`       | `True`                       | Set to `False` to hide the `--examples` flag.               |
 
 ```python
 @cmd(description="Deploy the app", version="1.0.0", hidden=True)
 def deploy(host: str, port: int = 8080):
     ...
 ```
+
+#### Usage examples
+
+Pass a `dict[str, str]` of `{description: command}` to show usage examples in `--help`:
+
+```python
+@cmd(
+    examples={
+        "Add two numbers": "calc 1 + 2",
+        "Multiply": "calc 2 '*' 3",
+    },
+    epilog="See the full docs at https://example.com/calc",
+)
+def calc(a: float, op: str, b: float):
+    ...
+```
+
+```bash
+$ python calc.py --help
+usage: calc.py [-h] [--examples] a op b
+
+positional arguments:
+  a
+  op
+  b
+
+options:
+  -h, --help    show this help message and exit
+  --examples    Show usage examples and exit
+
+examples:
+  calc 1 + 2   # Add two numbers
+  calc 2 * 3   # Multiply
+
+See the full docs at https://example.com/calc
+```
+
+The `--examples` flag prints only the example lines and exits, without the rest of the help text:
+
+```bash
+$ python calc.py --examples
+calc 1 + 2  # Add two numbers
+calc 2 * 3  # Multiply
+```
+
+Set `add_examples_flag=False` to suppress the `--examples` flag while keeping examples in `--help`.
 
 ### Required vs. optional parameters
 
@@ -303,7 +351,7 @@ The `@cli.subcmd` decorator accepts all `@cmd` parameters plus:
 | `name`    | `str \| None`       | `fn.__name__` | Override the subcommand name.                                     |
 | `aliases` | `list[str] \| None` | `None`        | Alternative names for the subcommand (`add_parser(aliases=...)`). |
 
-`CLI(...)` also accepts `description`, `help`, and `version` for the top-level CLI parser.
+`CLI(...)` also accepts `description`, `help`, `version`, `examples`, and `add_examples_flag` for the top-level CLI parser.
 
 ### Nested subcommands / groups
 
@@ -431,7 +479,8 @@ uv sync
 │   ├── 00_basic.py
 │   ├── 01_annotated.py
 │   ├── 02_subcommands.py
-│   └── 03_nested_subcommands.py
+│   ├── 03_nested_subcommands.py
+│   └── 04_examples.py
 ├── src/
 │   └── defcmd/
 │       ├── __init__.py
@@ -465,7 +514,7 @@ to run `pytest-cov` for coverage report:
 uv run pytest --cov=defcmd --cov-report=term-missing # or --cov-report=html
 ```
 
-The `examples/` directory contains small manual scripts for trying behavior in a real terminal. `examples/00_basic.py` shows the basic API, while `examples/01_annotated.py` shows `Annotated[..., Spec(...)]` metadata such as help text, custom prompts, secret input, and short flags. These examples are not part of the test suite, but they are useful for manually trying interactive behavior in a real tty.
+The `examples/` directory contains small manual scripts for trying behavior in a real terminal. `examples/00_basic.py` shows the basic API, while `examples/01_annotated.py` shows `Annotated[..., Spec(...)]` metadata such as help text, custom prompts, secret input, and short flags. `examples/04_examples.py` demonstrates usage examples with `@cmd` and `CLI`. These examples are not part of the test suite, but they are useful for manually trying interactive behavior in a real tty.
 
 ```sh
 uv run python examples/00_basic.py

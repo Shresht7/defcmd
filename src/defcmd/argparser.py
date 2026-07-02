@@ -16,16 +16,46 @@ import os
 
 from .introspect import Parameter
 from .convert import ValidationError, parse_value
+from .terminal import dim, cyan
 
 from typing import get_origin, get_args, Literal
 from collections.abc import Callable
 
-def build_parser(params: list[Parameter], description: str | None = None, parser: argparse.ArgumentParser | None = None, epilog: str | None = None) -> argparse.ArgumentParser:
+
+def build_parser(
+        params: list[Parameter],
+        description: str | None = None,
+        parser: argparse.ArgumentParser | None = None,
+        examples: dict[str, str] | None = None,
+        epilog: str | None = None,
+        add_examples_flag: bool = True,
+    ) -> argparse.ArgumentParser:
     """Build an `argparse.ArgumentParser` based on the list of `Parameter` objects extracted from a function signature"""
-    
+
+
     # If no parser is provided, create a new one with the given description
     if parser is None:
-        parser = argparse.ArgumentParser(description=description, epilog=epilog)
+        # Initialize the parser kwargs dictionary that will be passed to the ArgumentParser constructor
+        argparse_kwargs = {}
+
+        # Build the epilog for the argparse help text, including examples if provided
+        if examples:
+            argparse_kwargs["epilog"] = build_argparse_epilog(epilog, examples)
+            argparse_kwargs["formatter_class"] = argparse.RawDescriptionHelpFormatter
+
+        # Create the ArgumentParser with the provided description and any additional kwargs
+        parser = argparse.ArgumentParser(description=description, **argparse_kwargs)
+
+
+    # If examples are provided, expose a `--examples` flag that prints the examples block and exits
+    if examples and add_examples_flag:
+        parser.add_argument(
+            "--examples",
+            action=_ExamplesAction,
+            examples=examples,
+            help="Show usage examples and exit"
+        )
+
 
     for param in params:
 
@@ -71,6 +101,7 @@ def build_parser(params: list[Parameter], description: str | None = None, parser
 
     return parser
 
+
 # ----------------
 # HELPER FUNCTIONS
 # ----------------
@@ -103,3 +134,38 @@ def resolve_env(env: str | tuple[str, ...]) -> str | None:
             return value
     
     return None
+
+def generate_examples_block(examples: dict[str, str] | None, show_header: bool = True) -> str | None:
+    """Generate a formatted examples block for the command's help text"""
+    if not examples:
+        return None
+    lines = ["", cyan("examples:")] if show_header else []
+    cmds = list(examples.items())
+    width = max(len(example) for _, example in cmds)
+    for description, example in examples.items():
+        description = dim(f"# {description}")
+        lines.append(f"  {example.ljust(width)}        {description}")
+    return "\n".join(lines)
+
+
+def build_argparse_epilog(epilog: str | None, examples: dict[str, str] | None) -> str | None:
+    """Build the epilog for the argparse help text, including examples if provided"""
+    examples_block = generate_examples_block(examples, show_header=True)
+    if epilog and examples_block:
+        return f"{examples_block}\n\n{epilog}"
+    if examples_block:
+        return examples_block
+    return epilog
+
+class _ExamplesAction(argparse.Action):
+    """Custom argparse action to print the examples and exit"""
+    def __init__(self, option_strings, dest, **kwargs):
+        self.examples = kwargs.pop("examples", None)
+        super().__init__(option_strings, dest, nargs=0, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        width = max(len(e) for e in self.examples.values())
+        for desc, cmd in self.examples.items():
+            print(f"{cmd:<{width}}\t# {desc}")
+        parser.exit()
+

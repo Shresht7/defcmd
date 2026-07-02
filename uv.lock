@@ -82,7 +82,7 @@ wheels = [
 
 [[package]]
 name = "defcmd"
-version = "0.5.1"
+version = "0.5.3"
 source = { editable = "." }
 
 [package.dev-dependencies]
