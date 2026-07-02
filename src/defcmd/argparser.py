@@ -20,9 +20,19 @@ from .convert import ValidationError, parse_value
 from typing import get_origin, get_args, Literal
 from collections.abc import Callable
 
-def build_parser(params: list[Parameter], description: str | None = None, parser: argparse.ArgumentParser | None = None, epilog: str | None = None) -> argparse.ArgumentParser:
+def build_parser(
+        params: list[Parameter],
+        description: str | None = None,
+        parser: argparse.ArgumentParser | None = None,
+        examples: dict[str, str] | None = None,
+        epilog: str | None = None
+    ) -> argparse.ArgumentParser:
     """Build an `argparse.ArgumentParser` based on the list of `Parameter` objects extracted from a function signature"""
-    
+
+    # Build the epilog for the argparse help text, including examples if provided
+    if examples:
+        epilog = build_argparse_epilog(epilog, examples)
+
     # If no parser is provided, create a new one with the given description
     if parser is None:
         parser = argparse.ArgumentParser(description=description, epilog=epilog)
@@ -103,3 +113,24 @@ def resolve_env(env: str | tuple[str, ...]) -> str | None:
             return value
     
     return None
+
+def generate_examples_block(examples: dict[str, str] | None) -> str | None:
+    """Generate a formatted examples block for the command's help text"""
+    if not examples:
+        return None
+    lines = ["", "examples:"]
+    cmds = list(examples.items())
+    width = max(len(example) for _, example in cmds)
+    for description, example in examples.items():
+        lines.append(f"  {example.ljust(width)}  # {description}")
+    return "\n".join(lines)
+
+
+def build_argparse_epilog(epilog: str | None, examples: dict[str, str] | None) -> str | None:
+    """Build the epilog for the argparse help text, including examples if provided"""
+    examples_block = generate_examples_block(examples)
+    if epilog and examples_block:
+        return f"{examples_block}\n\n{epilog}"
+    if examples_block:
+        return examples_block
+    return epilog
