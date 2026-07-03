@@ -18,6 +18,7 @@ import argparse
 from .argparser import build_parser, build_argparse_epilog
 from .introspect import inspect_function_signature
 from .interactive import is_interactive
+from .terminal import auto_detect_color
 from .widgets import prompt, SelectWidget
 
 from typing import Callable, TypeAlias, overload, Any, Unpack, TypedDict
@@ -26,7 +27,6 @@ from typing import Callable, TypeAlias, overload, Any, Unpack, TypedDict
 ArgSubparsers: TypeAlias = argparse._SubParsersAction  # Type alias for subparsers in argparse
 
 Fn: TypeAlias = Callable[..., Any]  # Type alias for a callable function that takes any arguments and returns any value
-
 
 class CmdOptions(TypedDict, total=False):
     """Keyword arguments accepted by @cmd(), @cli.subcmd(), and CLI()."""
@@ -88,6 +88,9 @@ class Cmd:
 
     def run(self, argv=None):
         """Run the command with the provided arguments or prompt interactively if no arguments are given"""
+
+        # Auto-detect whether ANSI color output should be enabled based on environment variables and terminal capabilities
+        auto_detect_color()
 
         # If no arguments are provided, use the system command line arguments
         if argv is None:
@@ -169,6 +172,9 @@ class CLI:
 
     def run(self, argv: list[str] | None = None):
         """Runs the CLI, parsing the command-line arguments and dispatching to the appropriate subcommand"""
+
+        # Auto-detect whether ANSI color output should be enabled based on environment variables and terminal capabilities
+        auto_detect_color()
 
         # If no arguments are provided, use the system command line arguments
         if argv is None:

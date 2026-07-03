@@ -15,6 +15,8 @@ The module supports:
 
 from __future__ import annotations
 
+import os
+import sys
 from dataclasses import dataclass
 
 # ANSI escape sequences are used to control text formatting, color, and other output options in terminal emulators.
@@ -48,6 +50,17 @@ def set_ansi_enabled(yes: bool):
 def is_ansi_enabled() -> bool:
     """Check if ANSI escape sequences are enabled for terminal output"""
     return _IS_ANSI_ENABLED
+
+def auto_detect_color() -> None:
+    """Configure ANSI color based on NO_COLOR env var and stdout terminal capabilities"""
+    # Follow the NO_COLOR convention: https://no-color.org/
+    # If the NO_COLOR environment variable is set, disable ANSI color output
+    if os.environ.get("NO_COLOR") is not None:
+        set_ansi_enabled(False)
+    # If stdout is not a terminal (e.g., output is being piped to a file), disable ANSI color output
+    elif not sys.stdout.isatty():
+        set_ansi_enabled(False)
+    
 
 # ---------
 # ANSI CODE
@@ -309,6 +322,7 @@ class Cursor:
 __all__ = [
     "is_ansi_enabled",
     "set_ansi_enabled",
+    "auto_detect_color",
 
     "ANSICode",
     "ANSIColorCode",
