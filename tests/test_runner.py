@@ -597,6 +597,46 @@ def test_color_flag_works_with_cli_subcommand(monkeypatch):
     assert calls == ["Alice"]
 
 
+def test_color_flag_suppressed_on_cmd(capsys):
+    @cmd(add_color_flag=False)
+    def greet(name: str):
+        pass
+
+    with pytest.raises(SystemExit):
+        greet.run(["--help"])
+    out = strip_ansi(capsys.readouterr().out)
+    assert "--color" not in out
+    assert "--no-color" not in out
+
+
+def test_color_flag_suppressed_on_cli(capsys):
+    cli = CLI(add_color_flag=False)
+
+    @cli.subcmd
+    def greet(name: str):
+        pass
+
+    with pytest.raises(SystemExit):
+        cli.run(["--help"])
+    out = strip_ansi(capsys.readouterr().out)
+    assert "--color" not in out
+    assert "--no-color" not in out
+
+
+def test_color_flag_suppressed_on_subcmd(capsys):
+    cli = CLI()
+
+    @cli.subcmd(add_color_flag=False)
+    def greet(name: str):
+        pass
+
+    with pytest.raises(SystemExit):
+        cli.run(["greet", "--help"])
+    out = strip_ansi(capsys.readouterr().out)
+    assert "--color" not in out
+    assert "--no-color" not in out
+
+
 def test_no_color_flag_works_with_cli_subcommand(monkeypatch):
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
 

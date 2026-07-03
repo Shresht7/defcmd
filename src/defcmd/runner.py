@@ -39,6 +39,7 @@ class CmdOptions(TypedDict, total=False):
     version: str | None
     prompt_optional: bool | None
     add_examples_flag: bool
+    add_color_flag: bool
 
 
 # ---
@@ -79,6 +80,7 @@ class Cmd:
         self.version = kwargs.get("version")
         self.prompt_optional = kwargs.get("prompt_optional", True)
         self.add_examples_flag = kwargs.get("add_examples_flag", True)
+        self.add_color_flag = kwargs.get("add_color_flag", True)
 
 
     # Allow the Cmd instance to be called like a function, forwarding arguments to the underlying function
@@ -95,15 +97,16 @@ class Cmd:
 
         # Handle color flags in the arguments, allowing for --color and --no-color to override automatic detection
         color_override = None
-        filtered_args = []
-        for arg in argv:
-            if arg == "--color":
-                color_override = True
-            elif arg == "--no-color":
-                color_override = False
-            else:
-                filtered_args.append(arg)
-        argv = filtered_args                # Update argv to exclude color flags
+        if self.add_color_flag:
+            filtered_args = []
+            for arg in argv:
+                if arg == "--color":
+                    color_override = True
+                elif arg == "--no-color":
+                    color_override = False
+                else:
+                    filtered_args.append(arg)
+            argv = filtered_args                # Update argv to exclude color flags
         if color is not None:
             set_ansi_enabled(color)
         else:
@@ -121,7 +124,8 @@ class Cmd:
         parser = build_parser(self.params, description=self.description, examples=self.examples, epilog=self.epilog, add_examples_flag=self.add_examples_flag)
         if self.version:
             parser.add_argument("-v", "--version", action="version", version=self.version)
-        parser.add_argument("--color", action=argparse.BooleanOptionalAction, help="Enable or disable ANSI color output")
+        if self.add_color_flag:
+            parser.add_argument("--color", action=argparse.BooleanOptionalAction, help="Enable or disable ANSI color output")
         args = parser.parse_args(argv)
 
         # Extract the parsed arguments and call the function with them
@@ -156,6 +160,7 @@ class CLI:
         self.epilog = kwargs.get("epilog")
         self.version = kwargs.get("version")
         self.add_examples_flag = kwargs.get("add_examples_flag", True)
+        self.add_color_flag = kwargs.get("add_color_flag", True)
         self.commands = {}
 
 
@@ -195,15 +200,16 @@ class CLI:
 
         # Handle color flags in the arguments, allowing for --color and --no-color to override automatic detection
         color_override = None
-        filtered_args = []
-        for arg in argv:
-            if arg == "--color":
-                color_override = True
-            elif arg == "--no-color":
-                color_override = False
-            else:
-                filtered_args.append(arg)
-        argv = filtered_args                # Update argv to exclude color flags
+        if self.add_color_flag:
+            filtered_args = []
+            for arg in argv:
+                if arg == "--color":
+                    color_override = True
+                elif arg == "--no-color":
+                    color_override = False
+                else:
+                    filtered_args.append(arg)
+            argv = filtered_args                # Update argv to exclude color flags
         if color is not None:
             set_ansi_enabled(color)
         else:
@@ -233,7 +239,8 @@ class CLI:
                 cmd.attach_to_parser(subparsers, name)
             if self.version:
                 parser.add_argument("-v", "--version", action="version", version=self.version)
-            parser.add_argument("--color", action=argparse.BooleanOptionalAction, help="Enable or disable ANSI color output")
+            if self.add_color_flag:
+                parser.add_argument("--color", action=argparse.BooleanOptionalAction, help="Enable or disable ANSI color output")
             parser.parse_args(argv)  # handles --help, missing cmd, invalid cmd
 
         # If a valid command is provided, dispatch to the corresponding Cmd instance's run method with the remaining arguments
