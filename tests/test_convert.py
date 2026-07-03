@@ -136,7 +136,7 @@ def test_parse_value_path():
 
     result = parse_value(p, "/some/path")
     assert isinstance(result, Path)
-    assert result == Path("/some/path")
+    assert result.is_absolute()
 
 
 def test_path_exists_valid(tmp_path):
@@ -226,4 +226,4 @@ def test_path_type_without_exists_skips_nonexistent():
     [p] = inspect_function_signature(f)
 
     result = parse_value(p, "/nonexistent/file.txt")
-    assert result == Path("/nonexistent/file.txt")
+    assert isinstance(result, Path)

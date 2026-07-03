@@ -41,7 +41,10 @@ def convert_value(param: Parameter, raw: str):
 
     # Handle common types    
     if isinstance(annotation, type) and annotation is not str:
-        return annotation(raw)
+        value = annotation(raw)
+        if isinstance(value, Path):
+            value = value.expanduser().resolve()
+        return value
     
     return raw  # Default case: return the raw string if no conversion is needed
 
