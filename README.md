@@ -72,16 +72,17 @@ if __name__ == "__main__":
 
 #### `@cmd` parameters
 
-| Parameter         | Type           | Default                      | Description                                                 |
-| ----------------- | -------------- | ---------------------------- | ----------------------------------------------------------- |
-| `description`     | `str \| None`  | `fn.__doc__`                 | Override the help description for `--help`.                 |
-| `help`            | `str \| None`  | `description` → `fn.__doc__` | Short help text for subcommand listings.                    |
-| `examples`        | `dict[str, str] \| None` | `None`         | Usage examples shown in `--help` via `--examples` flag.     |
-| `epilog`          | `str \| None`  | `None`                       | Text displayed after argument help in `--help`.             |
-| `version`         | `str \| None`  | `None`                       | Adds `--version` / `-v` flag that prints and exits.         |
-| `hidden`          | `bool`         | `False`                      | Exclude from interactive command selection.                 |
-| `prompt_optional` | `bool \| None` | `True`                       | Skip prompting for optional parameters in interactive mode. |
-| `add_examples_flag` | `bool`       | `True`                       | Set to `False` to hide the `--examples` flag.               |
+| Parameter           | Type                     | Default                      | Description                                                 |
+| ------------------- | ------------------------ | ---------------------------- | ----------------------------------------------------------- |
+| `description`       | `str \| None`            | `fn.__doc__`                 | Override the help description for `--help`.                 |
+| `help`              | `str \| None`            | `description` → `fn.__doc__` | Short help text for subcommand listings.                    |
+| `examples`          | `dict[str, str] \| None` | `None`                       | Usage examples shown in `--help` via `--examples` flag.     |
+| `epilog`            | `str \| None`            | `None`                       | Text displayed after argument help in `--help`.             |
+| `version`           | `str \| None`            | `None`                       | Adds `--version` / `-v` flag that prints and exits.         |
+| `hidden`            | `bool`                   | `False`                      | Exclude from interactive command selection.                 |
+| `prompt_optional`   | `bool \| None`           | `True`                       | Skip prompting for optional parameters in interactive mode. |
+| `add_examples_flag` | `bool`                   | `True`                       | Set to `False` to hide the `--examples` flag.               |
+| `add_color_flag`    | `bool`                   | `True`                       | Set to `False` to hide the `--color` / `--no-color` flags.  |
 
 ```python
 @cmd(description="Deploy the app", version="1.0.0", hidden=True)
@@ -351,7 +352,7 @@ The `@cli.subcmd` decorator accepts all `@cmd` parameters plus:
 | `name`    | `str \| None`       | `fn.__name__` | Override the subcommand name.                                     |
 | `aliases` | `list[str] \| None` | `None`        | Alternative names for the subcommand (`add_parser(aliases=...)`). |
 
-`CLI(...)` also accepts `description`, `help`, `version`, `examples`, and `add_examples_flag` for the top-level CLI parser.
+`CLI(...)` also accepts `description`, `help`, `version`, `examples`, `add_examples_flag`, and `add_color_flag` for the top-level CLI parser.
 
 ### Nested subcommands / groups
 
@@ -447,6 +448,34 @@ $ python deploy.py other.com   # CLI arg overrides env
 ```
 
 If the env var is not set, the function's default (or a required positional error) applies. A tuple tries each variable name in order and uses the first one found. CLI arguments always take precedence over env vars.
+
+### ANSI Color Output
+
+`defcmd` supports colored terminal output automatically:
+
+- **`$NO_COLOR`**: If the [`NO_COLOR`](https://no-color.org/) environment variable is set, ANSI escape sequences are disabled.
+- **TTY detection**: If stdout is piped or redirected (not a terminal), colors are disabled automatically.
+- **`--color` / `--no-color`**: Both `Cmd` and `CLI` register these flags to override auto-detection. Pass `add_color_flag=False` to suppress them.
+
+```bash
+$ python script.py --color       # force color on
+$ python script.py --no-color    # force color off
+```
+
+The `--color` flag works at any level; pass it before or after the subcommand:
+
+```bash
+$ python tool.py --color db migrate "init"
+$ python tool.py db migrate --no-color "init"
+```
+
+Set `add_color_flag=False` on a command or CLI to hide the `--color` / `--no-color` flags from `--help`:
+
+```python
+@cmd(add_color_flag=False)
+def greet(name: str):
+    ...
+```
 
 
 ---
