@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from .introspect import Parameter
 from .spec import Spec
 
@@ -36,6 +38,13 @@ def convert_value(param: Parameter, raw: str):
     # Literal values remain as-is; type matching is done in parse_value()
     if get_origin(annotation) is Literal:
         return raw
+
+    # Handle Path type
+    if annotation is Path:
+        p = Path(raw)
+        if param.spec is None or param.spec.path_resolve:
+            p = p.expanduser().resolve()
+        return p
 
     # Handle common types    
     if isinstance(annotation, type) and annotation is not str:
@@ -74,6 +83,16 @@ def validate_value(param: Parameter, value):
             spec.validate(value)
         except Exception as e:
             raise ValidationError(f"custom validation failed: {e}")
+
+    # Path validation
+    if isinstance(value, Path):
+        if spec.path_exists and not value.exists():
+            raise ValidationError(f"path '{value}' does not exist")
+        if spec.path_type is not None and value.exists():
+            if spec.path_type == "file" and not value.is_file():
+                raise ValidationError(f"path '{value}' is not a file")
+            if spec.path_type == "dir" and not value.is_dir():
+                raise ValidationError(f"path '{value}' is not a directory")
 
 def parse_value(param: Parameter, raw: str):
     """Convert and validate a raw string value according to the parameter's type annotation and Spec constraints"""

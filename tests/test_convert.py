@@ -1,5 +1,7 @@
 import pytest
 
+from pathlib import Path
+
 from defcmd.convert import ValidationError, parse_value
 from defcmd.spec import Spec
 
@@ -120,3 +122,132 @@ def test_literal_numeric_strings_remain_strings():
     assert parse_value(p, "1") == "1"
     assert parse_value(p, "1") is not 1
     assert parse_value(p, "3") == "3"
+
+
+# PATH VALIDATION
+# ---------------
+
+def test_parse_value_path():
+    def f(data: Path):
+        pass
+
+    from defcmd.introspect import inspect_function_signature
+    [p] = inspect_function_signature(f)
+
+    result = parse_value(p, "/some/path")
+    assert isinstance(result, Path)
+
+
+def test_path_exists_valid(tmp_path):
+    d = tmp_path / "existing.txt"
+    d.write_text("hello")
+
+    def f(data: Annotated[Path, Spec(path_exists=True)]):
+        pass
+
+    from defcmd.introspect import inspect_function_signature
+    [p] = inspect_function_signature(f)
+
+    assert parse_value(p, str(d)) == d
+
+
+def test_path_exists_invalid():
+    def f(data: Annotated[Path, Spec(path_exists=True)]):
+        pass
+
+    from defcmd.introspect import inspect_function_signature
+    [p] = inspect_function_signature(f)
+
+    with pytest.raises(ValidationError, match="does not exist"):
+        parse_value(p, "/nonexistent/path")
+
+
+def test_path_type_file_valid(tmp_path):
+    file = tmp_path / "file.txt"
+    file.write_text("hello")
+
+    def _(data: Annotated[Path, Spec(path_type="file")]):
+        pass
+
+    from defcmd.introspect import inspect_function_signature
+    [p] = inspect_function_signature(_)
+
+    assert parse_value(p, str(file)) == file
+
+
+def test_path_type_file_invalid_wrong_type(tmp_path):
+    dir = tmp_path / "adir"
+    dir.mkdir()
+
+    def _(data: Annotated[Path, Spec(path_type="file")]):
+        pass
+
+    from defcmd.introspect import inspect_function_signature
+    [p] = inspect_function_signature(_)
+
+    with pytest.raises(ValidationError, match="not a file"):
+        parse_value(p, str(dir))
+
+
+def test_path_type_dir_valid(tmp_path):
+    dir = tmp_path / "adir"
+    dir.mkdir()
+
+    def _(data: Annotated[Path, Spec(path_type="dir")]):
+        pass
+
+    from defcmd.introspect import inspect_function_signature
+    [p] = inspect_function_signature(_)
+
+    assert parse_value(p, str(dir)) == dir
+
+
+def test_path_type_dir_invalid_wrong_type(tmp_path):
+    file = tmp_path / "file.txt"
+    file.write_text("hello")
+
+    def _(data: Annotated[Path, Spec(path_type="dir")]):
+        pass
+
+    from defcmd.introspect import inspect_function_signature
+    [p] = inspect_function_signature(_)
+
+    with pytest.raises(ValidationError, match="not a directory"):
+        parse_value(p, str(file))
+
+
+def test_path_resolve_false_preserves_raw_path():
+    """path_resolve=False should skip expanduser() and resolve()"""
+    def f(data: Annotated[Path, Spec(path_resolve=False)]):
+        pass
+
+    from defcmd.introspect import inspect_function_signature
+    [p] = inspect_function_signature(f)
+
+    result = parse_value(p, "~/relative/../path")
+    assert result == Path("~/relative/../path")
+
+
+def test_path_resolve_true_default():
+    """path_resolve=True (default) should resolve to absolute"""
+    def f(data: Annotated[Path, Spec(path_exists=False)]):
+        pass
+
+    from defcmd.introspect import inspect_function_signature
+    [p] = inspect_function_signature(f)
+
+    result = parse_value(p, "relative/path")
+    if isinstance(result, Path):
+        assert result.is_absolute()
+
+
+def test_path_type_without_exists_skips_nonexistent():
+    """path_type without path_exists should not error on non-existent paths"""
+    def f(data: Annotated[Path, Spec(path_type="file")]):
+        pass
+
+    from defcmd.introspect import inspect_function_signature
+    [p] = inspect_function_signature(f)
+
+    result = parse_value(p, "/nonexistent/file.txt")
+    assert isinstance(result, Path)
