@@ -5,5 +5,5 @@ defcmd provides a simple and intuitive way to turn any function signature into a
 from .runner import cmd, CLI
 from .spec import Spec
 
-__version__ = "0.5.4"
+__version__ = "0.6.0"
 __all__ = ["cmd", "CLI", "Spec"]
