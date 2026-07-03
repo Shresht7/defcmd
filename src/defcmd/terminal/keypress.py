@@ -157,7 +157,9 @@ def normalize(seq: str) -> str:
         return CSI_KEY_MAP[seq[2]]
     
     # Preserve single characters like letters, numbers, and symbols as is
-    if len(seq) == 1 and seq.isprintable() or seq == "":
+    if len(seq) == 1 and seq.isprintable():
+        return seq
+    if not seq:
         return seq
     
     # For unrecognized sequences, return the raw sequence
