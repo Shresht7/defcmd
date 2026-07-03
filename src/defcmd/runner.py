@@ -18,6 +18,7 @@ import argparse
 from .argparser import build_parser, build_argparse_epilog
 from .introspect import inspect_function_signature
 from .interactive import is_interactive
+from .terminal import auto_detect_color, is_ansi_enabled, set_ansi_enabled
 from .widgets import prompt, SelectWidget
 
 from typing import Callable, TypeAlias, overload, Any, Unpack, TypedDict
@@ -26,7 +27,6 @@ from typing import Callable, TypeAlias, overload, Any, Unpack, TypedDict
 ArgSubparsers: TypeAlias = argparse._SubParsersAction  # Type alias for subparsers in argparse
 
 Fn: TypeAlias = Callable[..., Any]  # Type alias for a callable function that takes any arguments and returns any value
-
 
 class CmdOptions(TypedDict, total=False):
     """Keyword arguments accepted by @cmd(), @cli.subcmd(), and CLI()."""
@@ -39,6 +39,7 @@ class CmdOptions(TypedDict, total=False):
     version: str | None
     prompt_optional: bool | None
     add_examples_flag: bool
+    add_color_flag: bool
 
 
 # ---
@@ -79,6 +80,7 @@ class Cmd:
         self.version = kwargs.get("version")
         self.prompt_optional = kwargs.get("prompt_optional", True)
         self.add_examples_flag = kwargs.get("add_examples_flag", True)
+        self.add_color_flag = kwargs.get("add_color_flag", True)
 
 
     # Allow the Cmd instance to be called like a function, forwarding arguments to the underlying function
@@ -86,12 +88,31 @@ class Cmd:
         return self.fn(*args, **kwargs)
 
 
-    def run(self, argv=None):
+    def run(self, argv=None, *, color: bool | None = None):
         """Run the command with the provided arguments or prompt interactively if no arguments are given"""
 
         # If no arguments are provided, use the system command line arguments
         if argv is None:
             argv = sys.argv[1:] # Skip the script name and use the rest of the args
+
+        # Handle color flags in the arguments, allowing for --color and --no-color to override automatic detection
+        color_override = None
+        if self.add_color_flag:
+            filtered_args = []
+            for arg in argv:
+                if arg == "--color":
+                    color_override = True
+                elif arg == "--no-color":
+                    color_override = False
+                else:
+                    filtered_args.append(arg)
+            argv = filtered_args                # Update argv to exclude color flags
+        if color is not None:
+            set_ansi_enabled(color)
+        else:
+            auto_detect_color()
+            if color_override is not None:
+                set_ansi_enabled(color_override)
 
         # If no arguments are provided and we're in an interactive environment, run the interactive wizard
         if is_interactive(argv):
@@ -103,6 +124,8 @@ class Cmd:
         parser = build_parser(self.params, description=self.description, examples=self.examples, epilog=self.epilog, add_examples_flag=self.add_examples_flag)
         if self.version:
             parser.add_argument("-v", "--version", action="version", version=self.version)
+        if self.add_color_flag:
+            parser.add_argument("--color", action=argparse.BooleanOptionalAction, help="Enable or disable ANSI color output")
         args = parser.parse_args(argv)
 
         # Extract the parsed arguments and call the function with them
@@ -137,6 +160,7 @@ class CLI:
         self.epilog = kwargs.get("epilog")
         self.version = kwargs.get("version")
         self.add_examples_flag = kwargs.get("add_examples_flag", True)
+        self.add_color_flag = kwargs.get("add_color_flag", True)
         self.commands = {}
 
 
@@ -167,12 +191,31 @@ class CLI:
         return group_cli                          # Return the group CLI for further command registration
 
 
-    def run(self, argv: list[str] | None = None):
+    def run(self, argv: list[str] | None = None, *, color: bool | None = None):
         """Runs the CLI, parsing the command-line arguments and dispatching to the appropriate subcommand"""
 
         # If no arguments are provided, use the system command line arguments
         if argv is None:
             argv = sys.argv[1:]  # Skip the script name and use the rest of the args
+
+        # Handle color flags in the arguments, allowing for --color and --no-color to override automatic detection
+        color_override = None
+        if self.add_color_flag:
+            filtered_args = []
+            for arg in argv:
+                if arg == "--color":
+                    color_override = True
+                elif arg == "--no-color":
+                    color_override = False
+                else:
+                    filtered_args.append(arg)
+            argv = filtered_args                # Update argv to exclude color flags
+        if color is not None:
+            set_ansi_enabled(color)
+        else:
+            auto_detect_color()
+            if color_override is not None:
+                set_ansi_enabled(color_override)
 
         # If no arguments are provided and we're in an interactive environment, run the interactive wizard for the CLI
         if is_interactive(argv):
@@ -184,7 +227,7 @@ class CLI:
             )
             cmdname = widget.value
             if cmdname in self.commands:
-                return self.commands[cmdname].run([])
+                return self.commands[cmdname].run([], color=is_ansi_enabled())
             print(f"Error: '{cmdname}' is not a valid command.")
             return
 
@@ -196,11 +239,13 @@ class CLI:
                 cmd.attach_to_parser(subparsers, name)
             if self.version:
                 parser.add_argument("-v", "--version", action="version", version=self.version)
+            if self.add_color_flag:
+                parser.add_argument("--color", action=argparse.BooleanOptionalAction, help="Enable or disable ANSI color output")
             parser.parse_args(argv)  # handles --help, missing cmd, invalid cmd
 
         # If a valid command is provided, dispatch to the corresponding Cmd instance's run method with the remaining arguments
         cmdname, *rest = argv
-        return self.commands[cmdname].run(rest) 
+        return self.commands[cmdname].run(rest, color=is_ansi_enabled())
 
 
     def attach_to_parser(self, subparsers: ArgSubparsers, name: str):

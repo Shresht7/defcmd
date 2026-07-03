@@ -276,3 +276,80 @@ def test_rgb_validation(r, g, b):
 )
 def test_cursor(method, args, expected):
     assert method(*args) == expected
+
+
+# -----------
+# COLOR FLAG
+# -----------
+
+
+def test_is_ansi_enabled_default():
+    assert is_ansi_enabled() is True
+
+
+class TestAnsiDisabled:
+    """All tests in this class run with ANSI codes disabled, then restore the flag"""
+
+    def setup_method(self):
+        set_ansi_enabled(False)
+
+    def teardown_method(self):
+        set_ansi_enabled(True)
+
+    def test_flag_functions(self):
+        assert is_ansi_enabled() is False
+        set_ansi_enabled(True)
+        assert is_ansi_enabled() is True
+        set_ansi_enabled(False)
+
+    # ANSICode
+    def test_str_returns_empty(self):
+        assert str(ANSICode(31)) == ""
+
+    def test_unset_returns_empty(self):
+        assert ANSICode(31).unset == ""
+
+    def test_wrap_returns_plain_text(self):
+        assert ANSICode(31).wrap("Hello") == "Hello"
+
+    def test_call_returns_plain_text(self):
+        assert ANSICode(31)("Hello", "World") == "Hello World"
+
+    # ANSIColorCode (inherits from ANSICode)
+    def test_color_code_str_returns_empty(self):
+        assert str(ANSIColorCode(31)) == ""
+
+    def test_color_code_unset_returns_empty(self):
+        assert ANSIColorCode(31).unset == ""
+
+    def test_color_code_wrap_returns_plain_text(self):
+        assert ANSIColorCode(31).wrap("Hello") == "Hello"
+
+    # ANSIRGBColorCode
+    def test_rgb_str_returns_empty(self):
+        assert str(ANSIRGBColorCode(255, 0, 0)) == ""
+
+    def test_rgb_unset_returns_empty(self):
+        assert ANSIRGBColorCode(255, 0, 0).unset == ""
+
+    def test_rgb_wrap_returns_plain_text(self):
+        assert ANSIRGBColorCode(255, 0, 0).wrap("Hello") == "Hello"
+
+    # ANSICodes
+    def test_codes_str_returns_empty(self):
+        assert str(ANSICodes(31, 1)) == ""
+
+    def test_codes_unset_returns_empty(self):
+        assert ANSICodes(31, 1).unset == ""
+
+    def test_codes_wrap_returns_plain_text(self):
+        assert ANSICodes(31, 1).wrap("Hello") == "Hello"
+
+    def test_codes_call_returns_plain_text(self):
+        assert ANSICodes(31, 1)("Hello") == "Hello"
+
+    # Cursor should NOT be affected
+    def test_cursor_unaffected(self):
+        assert Cursor.up() == "\x1b[1A"
+        assert Cursor.clear_line() == "\x1b[2K"
+
