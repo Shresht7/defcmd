@@ -39,12 +39,16 @@ def convert_value(param: Parameter, raw: str):
     if get_origin(annotation) is Literal:
         return raw
 
+    # Handle Path type
+    if annotation is Path:
+        p = Path(raw)
+        if param.spec is None or param.spec.path_resolve:
+            p = p.expanduser().resolve()
+        return p
+
     # Handle common types    
     if isinstance(annotation, type) and annotation is not str:
-        value = annotation(raw)
-        if isinstance(value, Path):
-            value = value.expanduser().resolve()
-        return value
+        return annotation(raw)
     
     return raw  # Default case: return the raw string if no conversion is needed
 
