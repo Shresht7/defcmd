@@ -1,9 +1,12 @@
 import pytest
+
 import re
+from pathlib import Path
 
 from defcmd.runner import cmd, CLI
 from defcmd.spec import Spec
 from defcmd.terminal import is_ansi_enabled
+
 from typing import Annotated
 
 
@@ -651,3 +654,15 @@ def test_no_color_flag_works_with_cli_subcommand(monkeypatch):
 
     assert is_ansi_enabled() is False
     assert calls == ["Alice"]
+
+
+def test_cmd_with_path_arg(tmp_path):
+    file = tmp_path / "data.txt"
+    file.write_text("hello")
+
+    @cmd
+    def read_file(path: Path):
+        return path.read_text()
+
+    result = read_file.run([str(file)])
+    assert result == "hello"
