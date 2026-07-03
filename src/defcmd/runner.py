@@ -18,7 +18,7 @@ import argparse
 from .argparser import build_parser, build_argparse_epilog
 from .introspect import inspect_function_signature
 from .interactive import is_interactive
-from .terminal import auto_detect_color, set_ansi_enabled
+from .terminal import auto_detect_color, is_ansi_enabled, set_ansi_enabled
 from .widgets import prompt, SelectWidget
 
 from typing import Callable, TypeAlias, overload, Any, Unpack, TypedDict
@@ -86,13 +86,14 @@ class Cmd:
         return self.fn(*args, **kwargs)
 
 
-    def run(self, argv=None):
+    def run(self, argv=None, *, color: bool | None = None):
         """Run the command with the provided arguments or prompt interactively if no arguments are given"""
 
         # If no arguments are provided, use the system command line arguments
         if argv is None:
             argv = sys.argv[1:] # Skip the script name and use the rest of the args
 
+        # Handle color flags in the arguments, allowing for --color and --no-color to override automatic detection
         color_override = None
         filtered_args = []
         for arg in argv:
@@ -102,13 +103,13 @@ class Cmd:
                 color_override = False
             else:
                 filtered_args.append(arg)
-        argv = filtered_args
-
-        # Auto-detect whether ANSI color output should be enabled based on environment variables and terminal capabilities
-        auto_detect_color()
-        # If the user has explicitly specified a color preference via command-line flags, override the auto-detected setting
-        if color_override is not None:
-            set_ansi_enabled(color_override)
+        argv = filtered_args                # Update argv to exclude color flags
+        if color is not None:
+            set_ansi_enabled(color)
+        else:
+            auto_detect_color()
+            if color_override is not None:
+                set_ansi_enabled(color_override)
 
         # If no arguments are provided and we're in an interactive environment, run the interactive wizard
         if is_interactive(argv):
@@ -185,13 +186,14 @@ class CLI:
         return group_cli                          # Return the group CLI for further command registration
 
 
-    def run(self, argv: list[str] | None = None):
+    def run(self, argv: list[str] | None = None, *, color: bool | None = None):
         """Runs the CLI, parsing the command-line arguments and dispatching to the appropriate subcommand"""
 
         # If no arguments are provided, use the system command line arguments
         if argv is None:
             argv = sys.argv[1:]  # Skip the script name and use the rest of the args
 
+        # Handle color flags in the arguments, allowing for --color and --no-color to override automatic detection
         color_override = None
         filtered_args = []
         for arg in argv:
@@ -201,13 +203,13 @@ class CLI:
                 color_override = False
             else:
                 filtered_args.append(arg)
-        argv = filtered_args
-
-        # Auto-detect whether ANSI color output should be enabled based on environment variables and terminal capabilities
-        auto_detect_color()
-        # If the user has explicitly specified a color preference via command-line flags, override the auto-detected setting
-        if color_override is not None:
-            set_ansi_enabled(color_override)
+        argv = filtered_args                # Update argv to exclude color flags
+        if color is not None:
+            set_ansi_enabled(color)
+        else:
+            auto_detect_color()
+            if color_override is not None:
+                set_ansi_enabled(color_override)
 
         # If no arguments are provided and we're in an interactive environment, run the interactive wizard for the CLI
         if is_interactive(argv):
@@ -219,7 +221,7 @@ class CLI:
             )
             cmdname = widget.value
             if cmdname in self.commands:
-                return self.commands[cmdname].run([])
+                return self.commands[cmdname].run([], color=is_ansi_enabled())
             print(f"Error: '{cmdname}' is not a valid command.")
             return
 
@@ -236,7 +238,7 @@ class CLI:
 
         # If a valid command is provided, dispatch to the corresponding Cmd instance's run method with the remaining arguments
         cmdname, *rest = argv
-        return self.commands[cmdname].run(rest) 
+        return self.commands[cmdname].run(rest, color=is_ansi_enabled())
 
 
     def attach_to_parser(self, subparsers: ArgSubparsers, name: str):
