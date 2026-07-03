@@ -136,7 +136,6 @@ def test_parse_value_path():
 
     result = parse_value(p, "/some/path")
     assert isinstance(result, Path)
-    assert result.is_absolute()
 
 
 def test_path_exists_valid(tmp_path):
@@ -215,6 +214,31 @@ def test_path_type_dir_invalid_wrong_type(tmp_path):
 
     with pytest.raises(ValidationError, match="not a directory"):
         parse_value(p, str(file))
+
+
+def test_path_resolve_false_preserves_raw_path():
+    """path_resolve=False should skip expanduser() and resolve()"""
+    def f(data: Annotated[Path, Spec(path_resolve=False)]):
+        pass
+
+    from defcmd.introspect import inspect_function_signature
+    [p] = inspect_function_signature(f)
+
+    result = parse_value(p, "~/relative/../path")
+    assert result == Path("~/relative/../path")
+
+
+def test_path_resolve_true_default():
+    """path_resolve=True (default) should resolve to absolute"""
+    def f(data: Annotated[Path, Spec(path_exists=False)]):
+        pass
+
+    from defcmd.introspect import inspect_function_signature
+    [p] = inspect_function_signature(f)
+
+    result = parse_value(p, "relative/path")
+    if isinstance(result, Path):
+        assert result.is_absolute()
 
 
 def test_path_type_without_exists_skips_nonexistent():
