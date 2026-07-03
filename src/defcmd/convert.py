@@ -33,7 +33,7 @@ def convert_value(param: Parameter, raw: str):
     if annotation is bool:
         return parse_bool(raw)
     
-    # Literal values are strings by convention in the current implementation
+    # Literal values remain as-is; type matching is done in parse_value()
     if get_origin(annotation) is Literal:
         return raw
 
@@ -90,6 +90,9 @@ def parse_value(param: Parameter, raw: str):
     if origin is Literal:
         choices = get_args(param.annotation)
         if value not in choices:
+            for c in choices:
+                if str(c) == raw:
+                    return c
             raise ValidationError(f"invalid choice: {value}. (choose from {', '.join(map(str, choices))})")
 
     return value
