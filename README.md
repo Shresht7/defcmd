@@ -188,7 +188,7 @@ python deploy.py --env nope   # error: invalid choice
 
 ### Path arguments
 
-`pathlib.Path` annotations are supported natively. Paths are auto-expanded and resolved to absolute paths:
+`pathlib.Path` annotations are supported natively. Paths are auto-expanded (`~`) and resolved to absolute paths:
 
 ```python
 from pathlib import Path
@@ -202,6 +202,8 @@ python script.py ~/input.csv --output ./results.csv
 # Path becomes: /home/user/input.csv
 # Output becomes: /cwd/results.csv
 ```
+
+Set `Spec(path_resolve=False)` to preserve the raw path as provided.
 
 Add validation with `Spec`:
 
@@ -316,6 +318,7 @@ Enter your token: ********
 | `validate`    | A custom validation function for the parameter          |                              |
 | `path_exists` | If `True`, raises an error if the path doesn't exist    |                              |
 | `path_type`   | `"file"` or `"dir"` - validates the path type           |                              |
+| `path_resolve` | If `True` (default), expands `~` and resolves to absolute path |                       |
 
 ### Subcommands
 
