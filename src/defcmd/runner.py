@@ -18,7 +18,7 @@ import argparse
 from .argparser import build_parser, build_argparse_epilog
 from .introspect import inspect_function_signature
 from .interactive import is_interactive
-from .terminal import auto_detect_color
+from .terminal import auto_detect_color, set_ansi_enabled
 from .widgets import prompt, SelectWidget
 
 from typing import Callable, TypeAlias, overload, Any, Unpack, TypedDict
@@ -89,12 +89,26 @@ class Cmd:
     def run(self, argv=None):
         """Run the command with the provided arguments or prompt interactively if no arguments are given"""
 
-        # Auto-detect whether ANSI color output should be enabled based on environment variables and terminal capabilities
-        auto_detect_color()
-
         # If no arguments are provided, use the system command line arguments
         if argv is None:
             argv = sys.argv[1:] # Skip the script name and use the rest of the args
+
+        color_override = None
+        filtered_args = []
+        for arg in argv:
+            if arg == "--color":
+                color_override = True
+            elif arg == "--no-color":
+                color_override = False
+            else:
+                filtered_args.append(arg)
+        argv = filtered_args
+
+        # Auto-detect whether ANSI color output should be enabled based on environment variables and terminal capabilities
+        auto_detect_color()
+        # If the user has explicitly specified a color preference via command-line flags, override the auto-detected setting
+        if color_override is not None:
+            set_ansi_enabled(color_override)
 
         # If no arguments are provided and we're in an interactive environment, run the interactive wizard
         if is_interactive(argv):
@@ -106,6 +120,7 @@ class Cmd:
         parser = build_parser(self.params, description=self.description, examples=self.examples, epilog=self.epilog, add_examples_flag=self.add_examples_flag)
         if self.version:
             parser.add_argument("-v", "--version", action="version", version=self.version)
+        parser.add_argument("--color", action=argparse.BooleanOptionalAction, help="Enable or disable ANSI color output")
         args = parser.parse_args(argv)
 
         # Extract the parsed arguments and call the function with them
@@ -173,12 +188,26 @@ class CLI:
     def run(self, argv: list[str] | None = None):
         """Runs the CLI, parsing the command-line arguments and dispatching to the appropriate subcommand"""
 
-        # Auto-detect whether ANSI color output should be enabled based on environment variables and terminal capabilities
-        auto_detect_color()
-
         # If no arguments are provided, use the system command line arguments
         if argv is None:
             argv = sys.argv[1:]  # Skip the script name and use the rest of the args
+
+        color_override = None
+        filtered_args = []
+        for arg in argv:
+            if arg == "--color":
+                color_override = True
+            elif arg == "--no-color":
+                color_override = False
+            else:
+                filtered_args.append(arg)
+        argv = filtered_args
+
+        # Auto-detect whether ANSI color output should be enabled based on environment variables and terminal capabilities
+        auto_detect_color()
+        # If the user has explicitly specified a color preference via command-line flags, override the auto-detected setting
+        if color_override is not None:
+            set_ansi_enabled(color_override)
 
         # If no arguments are provided and we're in an interactive environment, run the interactive wizard for the CLI
         if is_interactive(argv):
@@ -202,6 +231,7 @@ class CLI:
                 cmd.attach_to_parser(subparsers, name)
             if self.version:
                 parser.add_argument("-v", "--version", action="version", version=self.version)
+            parser.add_argument("--color", action=argparse.BooleanOptionalAction, help="Enable or disable ANSI color output")
             parser.parse_args(argv)  # handles --help, missing cmd, invalid cmd
 
         # If a valid command is provided, dispatch to the corresponding Cmd instance's run method with the remaining arguments
