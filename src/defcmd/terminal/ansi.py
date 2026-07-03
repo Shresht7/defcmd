@@ -61,16 +61,16 @@ class ANSICode:
     unset_code: int = 0
 
     def __str__(self) -> str:
-        return f"{CSI}{self.code}{CSI_TERMINATOR}"
+        return f"{CSI}{self.code}{CSI_TERMINATOR}" if is_ansi_enabled() else ""
     
     @property
     def unset(self) -> str:
         """Return the ANSI escape code to unset the current formatting or color."""
-        return f"{CSI}{self.unset_code}{CSI_TERMINATOR}"
+        return f"{CSI}{self.unset_code}{CSI_TERMINATOR}" if is_ansi_enabled() else ""
 
     def wrap(self, text: str) -> str:
         """Wrap the given text with the ANSI escape code to apply formatting."""
-        return f"{self}{text}{self.unset}"
+        return f"{self}{text}{self.unset}" if is_ansi_enabled() else text
     
     def __call__(self, *args: object) -> str:
         return self.wrap(" ".join(str(arg) for arg in args))
@@ -125,16 +125,17 @@ class ANSIRGBColorCode:
                 raise ValueError(f"{name} must be between 0 and 255 (got {value})")
 
     def __str__(self) -> str:
-        return f"{CSI}{self.code};2;{self.r};{self.g};{self.b}{CSI_TERMINATOR}"
+        """Return the ANSI escape code for the RGB color"""
+        return f"{CSI}{self.code};2;{self.r};{self.g};{self.b}{CSI_TERMINATOR}" if is_ansi_enabled() else ""
 
     @property
     def unset(self) -> str:
         """Return the ANSI escape code to unset the current RGB color."""
-        return f"{CSI}{self.unset_code}{CSI_TERMINATOR}"
+        return f"{CSI}{self.unset_code}{CSI_TERMINATOR}" if is_ansi_enabled() else ""
 
     def wrap(self, text: str) -> str:
         """Wrap the given text with the ANSI RGB color code to apply formatting."""
-        return f"{self}{text}{self.unset}"
+        return f"{self}{text}{self.unset}" if is_ansi_enabled() else text
 
     def __repr__(self) -> str:
         return f"ANSIRGBColorCode(r={self.r}, g={self.g}, b={self.b}, code={self.code}, unset_code={self.unset_code})"
@@ -155,18 +156,18 @@ class ANSICodes:
         self.codes = [code if isinstance(code, ANSICode) else ANSICode(code) for code in codes]
 
     def __str__(self) -> str:
-        return f"{CSI}{DELIMITER.join(str(code.code) for code in self.codes)}{CSI_TERMINATOR}"
+        return f"{CSI}{DELIMITER.join(str(code.code) for code in self.codes)}{CSI_TERMINATOR}" if is_ansi_enabled() else ""
     
     def __repr__(self) -> str:
         return f"ANSICodes({', '.join(repr(code) for code in self.codes)})"
 
     @property
     def unset(self) -> str:
-        return RESET
+        return RESET if is_ansi_enabled() else ""
 
     def wrap(self, text: str) -> str:
         """Wrap the given text with the ANSI escape codes to apply formatting."""
-        return f"{self}{text}{self.unset}"
+        return f"{self}{text}{self.unset}" if is_ansi_enabled() else text
     
     def __call__(self, *args: object) -> str:
         return self.wrap(" ".join(str(arg) for arg in args))
