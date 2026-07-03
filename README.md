@@ -3,7 +3,7 @@
 Turn any Python function signature into a command-line script.
 
 > “I thought _Python_ was supposed to be ***the scripting language!*** why do I have to write 100 lines of boilerplate with `argparse` just to make a simple script?!”
-> <br> — Me, _before writing 1500 lines of "minimal" framework_
+> <br> — Me, _before writing 2000 lines of "minimal" cli framework_
 
 ```python
 from defcmd import cmd
@@ -305,20 +305,20 @@ Enter your token: ********
 ```
 #### Specification Options
 
-| Spec          | Description                                             | Overrides                    |
-| ------------- | ------------------------------------------------------- | ---------------------------- |
-| `short`       | Short flag for the parameter (e.g., `-p`)               |                              |
-| `help`        | Help text for the parameter, shown in `--help`          | The default help message     |
-| `prompt`      | Custom prompt text, `True` to force, `False` to skip    | The default prompt text      |
-| `secret`      | If `True`, input is hidden in interactive mode          |                              |
-| `env`         | Environment variable(s) to read a default value from    | The function's default value |
-| `min`         | Minimum numeric value (inclusive)                       |                              |
-| `max`         | Maximum numeric value (inclusive)                       |                              |
-| `pattern`     | A regex pattern the value must match (uses `fullmatch`) |                              |
-| `validate`    | A custom validation function for the parameter          |                              |
-| `path_exists` | If `True`, raises an error if the path doesn't exist    |                              |
-| `path_type`   | `"file"` or `"dir"` - validates the path type           |                              |
-| `path_resolve` | If `True` (default), expands `~` and resolves to absolute path |                       |
+| Spec           | Description                                                    | Overrides                    |
+| -------------- | -------------------------------------------------------------- | ---------------------------- |
+| `short`        | Short flag for the parameter (e.g., `-p`)                      |                              |
+| `help`         | Help text for the parameter, shown in `--help`                 | The default help message     |
+| `prompt`       | Custom prompt text, `True` to force, `False` to skip           | The default prompt text      |
+| `secret`       | If `True`, input is hidden in interactive mode                 |                              |
+| `env`          | Environment variable(s) to read a default value from           | The function's default value |
+| `min`          | Minimum numeric value (inclusive)                              |                              |
+| `max`          | Maximum numeric value (inclusive)                              |                              |
+| `pattern`      | A regex pattern the value must match (uses `fullmatch`)        |                              |
+| `validate`     | A custom validation function for the parameter                 |                              |
+| `path_exists`  | If `True`, raises an error if the path doesn't exist           |                              |
+| `path_type`    | `"file"` or `"dir"` - validates the path type                  |                              |
+| `path_resolve` | If `True` (default), expands `~` and resolves to absolute path |                              |
 
 ### Subcommands
 
