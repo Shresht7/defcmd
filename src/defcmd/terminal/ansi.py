@@ -33,6 +33,22 @@ CSI_TERMINATOR = "m"
 # The ANSI escape code delimiter is the character that separates multiple parameters in an ANSI escape sequence.
 DELIMITER = ";"
 
+# -----------
+# GLOBAL FLAG
+# -----------
+
+# Flag indicating whether ANSI escape sequences are enabled for terminal output
+_IS_ANSI_ENABLED = True
+
+def set_ansi_enabled(yes: bool):
+    """Enable or disable ANSI escape sequences for terminal output"""
+    global _IS_ANSI_ENABLED
+    _IS_ANSI_ENABLED = yes
+
+def is_ansi_enabled() -> bool:
+    """Check if ANSI escape sequences are enabled for terminal output"""
+    return _IS_ANSI_ENABLED
+
 # ---------
 # ANSI CODE
 # ---------
@@ -290,6 +306,9 @@ class Cursor:
 # -------
 
 __all__ = [
+    "is_ansi_enabled",
+    "set_ansi_enabled",
+
     "ANSICode",
     "ANSIColorCode",
     "ANSIRGBColorCode",
