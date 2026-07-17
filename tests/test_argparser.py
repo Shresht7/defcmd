@@ -275,3 +275,90 @@ def test_build_argparse_epilog_epilog_only():
 
 def test_build_argparse_epilog_none():
     assert build_argparse_epilog(None, None) is None
+
+
+# LIST[T]
+# -------
+
+def test_list_required_positional():
+    def f(items: list[str]):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    args = parser.parse_args(["a", "b", "c"])
+    assert args.items == ["a", "b", "c"]
+
+def test_list_required_empty_rejected():
+    def f(items: list[str]):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    with pytest.raises(SystemExit):
+        parser.parse_args([])  # No items provided, should raise an error
+
+def test_list_optional_empty_default():
+    def f(items: list[str] = []):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    args = parser.parse_args([])
+    assert args.items == []  # Default empty list is used
+
+def test_list_optional_with_values():
+    def f(items: list[str] = []):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    args = parser.parse_args(["--items", "a", "b"])
+    assert args.items == ["a", "b"]  # Provided values override the default empty
+
+def test_list_inner_type_conversion():
+    def f(items: list[int]):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    args = parser.parse_args(["1", "2", "3"])
+    assert args.items == [1, 2, 3]  # Strings are converted to integers
+
+def test_list_inner_type_validation():
+    def f(items: Annotated[list[int], Spec(min=0, max=10)]):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    args = parser.parse_args(["1", "5", "10"])
+    assert args.items == [1, 5, 10]  # Valid values
+
+    with pytest.raises(SystemExit):
+        parser.parse_args(["1", "11"])  # 11 is out of bounds, should raise an error
+
+def test_list_literal_inner_type():
+    def f(items: list[Literal["a", "b", "c"]]):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    args = parser.parse_args(["a", "b"])
+    assert args.items == ["a", "b"]  # Valid literals
+
+    with pytest.raises(SystemExit):
+        parser.parse_args(["a", "d"])  # 'd' is not a valid literal, should raise an error
+
+def test_list_bool_inner_type():
+    def f(items: list[bool]):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    args = parser.parse_args(["true", "false", "yes", "no"])
+    assert args.items == [True, False, True, False]  # Valid boolean representations
+
+    with pytest.raises(SystemExit):
+        parser.parse_args(["true", "maybe"])  # 'maybe' is not a valid boolean, should raise an error
+
+def test_list_mixed_positional_and_flag():
+    def f(name: str, items: list[str] = []):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    args = parser.parse_args(["Alice", "--items", "a", "b"])
+    assert args.name == "Alice"
+    assert args.items == ["a", "b"]  # Positional argument and flag argument
+
