@@ -21,6 +21,8 @@ from .terminal import dim, cyan
 from typing import get_origin, get_args, Literal
 from collections.abc import Callable
 
+# REFACTOR: build_parser into a dispatch pattern. Handle list[T], bool, Literal,and regular types in dedicated functions rather than inline conditionals.
+
 
 def build_parser(
         params: list[Parameter],
@@ -79,8 +81,11 @@ def build_parser(
         # If the parameter has a Spec with an env attribute, attempt to resolve the value from the environment variables
         if param.spec and param.spec.env:
             if origin is list:
-                # TODO: #45 Handle list[T] env resolution by splitting on commas or spaces and converting each value to the inner type
-                pass
+                inner_type = get_args(param.annotation)[0] if get_args(param.annotation) else str
+                synthetic = Parameter(name=param.name, annotation=inner_type, required=False, default=None, kind=param.kind, spec=param.spec)
+                raw = resolve_env(param.spec.env)
+                if raw is not None:
+                    default = [parse_value(synthetic, part) for part in raw.split()]
             else:
                 raw = resolve_env(param.spec.env)
                 if raw is not None:
