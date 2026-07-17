@@ -2,8 +2,18 @@ name: Test
 on:
     push:
         branches: [main]
+        paths:
+            - src/**/*.py
+            - tests/**/*.py
+            - examples/**/*.py
+            - pyproject.toml
     pull_request:
         branches: [main]
+        paths:
+            - src/**/*.py
+            - tests/**/*.py
+            - examples/**/*.py
+            - pyproject.toml
 
 jobs:
     test:
