@@ -6,6 +6,7 @@ from .base import Widget
 from .text import TextInputWidget
 from .confirm import ConfirmWidget
 from .select import SelectWidget
+from .multi_value import MultiValueWidget
 
 from typing import get_origin, get_args, Literal
 
@@ -39,6 +40,14 @@ def auto_widget(param: Parameter, input_reader: InputReader | None = None) -> Wi
     if origin is Literal:
         options = list(get_args(param.annotation))
         return SelectWidget(prompt=prompt, options=options, default=default, input_reader=input_reader, help=help)
+
+    # Handle list[T] for multi-value input
+    if origin is list:
+        inner_args = get_args(param.annotation)
+        inner_type = inner_args[0] if inner_args else str
+        synthetic_param = Parameter(name=param.name, annotation=inner_type, required=False, default=None, kind=param.kind, spec=param.spec)
+        converter = lambda raw: parse_value(synthetic_param, raw)
+        return MultiValueWidget(prompt=prompt, help=help, default=default, converter=converter, input_reader=input_reader)
 
     # If the parameter is of any other type, we return a TextInputWidget, which allows the user to input text.
     # Use the Spec prompt if provided, otherwise fall back to the parameter name as the label.
