@@ -362,3 +362,23 @@ def test_list_mixed_positional_and_flag():
     assert args.name == "Alice"
     assert args.items == ["a", "b"]  # Positional argument and flag argument
 
+def test_list_env_var(monkeypatch):
+    monkeypatch.setenv("HOSTS", "server1 server2 server3")
+
+    def f(hosts: Annotated[list[str], Spec(env="HOSTS")] = []):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    args = parser.parse_args([])
+    assert args.hosts == ["server1", "server2", "server3"]
+
+def test_list_env_var_int_conversion(monkeypatch):
+    monkeypatch.setenv("PORTS", "80 443 8080")
+
+    def f(ports: Annotated[list[int], Spec(env="PORTS")] = []):
+        pass
+
+    parser = build_parser(inspect_function_signature(f))
+    args = parser.parse_args([])
+    assert args.ports == [80, 443, 8080]
+
