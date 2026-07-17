@@ -21,6 +21,8 @@ from .terminal import dim, cyan
 from typing import get_origin, get_args, Literal
 from collections.abc import Callable
 
+# REFACTOR: build_parser into a dispatch pattern. Handle list[T], bool, Literal,and regular types in dedicated functions rather than inline conditionals.
+
 
 def build_parser(
         params: list[Parameter],
@@ -71,24 +73,50 @@ def build_parser(
         if param.spec and param.spec.help:
             kwargs["help"] = param.spec.help
 
+        # Get the origin of the parameter's annotation to handle special cases like list[T] and Literal types
+        origin = get_origin(param.annotation)
+
         # Determine the default value
         default = param.default if not param.required else None
         # If the parameter has a Spec with an env attribute, attempt to resolve the value from the environment variables
         if param.spec and param.spec.env:
-            raw = resolve_env(param.spec.env)
-            if raw is not None:
-                default = parse_value(param, raw)
+            if origin is list:
+                inner_type = get_args(param.annotation)[0] if get_args(param.annotation) else str
+                synthetic = Parameter(name=param.name, annotation=inner_type, required=False, default=None, kind=param.kind, spec=param.spec)
+                raw = resolve_env(param.spec.env)
+                if raw is not None:
+                    default = [parse_value(synthetic, part) for part in raw.split()]
+            else:
+                raw = resolve_env(param.spec.env)
+                if raw is not None:
+                    default = parse_value(param, raw)
 
         # Handle boolean parameters with a special action that creates both --flag and --no-flag options and sets the default value appropriately
         if param.annotation is bool:
             parser.add_argument(*names, action=argparse.BooleanOptionalAction, default=default, **kwargs)
             continue # Skip the rest of the loop since we've already handled this parameter
 
+        # Handle list[T] for multi-value arguments
+        if origin is list:
+
+            # Create a synthetic parameter with the inner type of the list to use for type conversion and validation
+            annotation_args = get_args(param.annotation)
+            inner_type = annotation_args[0] if annotation_args else str
+            synthetic_param = Parameter(name=param.name, annotation=inner_type, required=False, default=None, kind=param.kind, spec=param.spec)
+            kwargs["type"] = _make_type_converter(synthetic_param)
+
+            # Set nargs to "+" if the parameter is required and has no default, otherwise set it to "*"
+            if param.required and default is None:
+                kwargs["nargs"] = "+"
+            else:
+                kwargs["nargs"] = "*"
+
+
         # For other types, use the type converter function to handle conversion and validation
-        kwargs["type"] = _make_type_converter(param)
+        if not kwargs.get("type"):
+            kwargs["type"] = _make_type_converter(param)
 
         # Choices for Literal types
-        origin = get_origin(param.annotation)
         if origin is Literal:
             kwargs["choices"] = list(get_args(param.annotation))
 
