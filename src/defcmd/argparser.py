@@ -71,21 +71,25 @@ def build_parser(
         if param.spec and param.spec.help:
             kwargs["help"] = param.spec.help
 
+        # Get the origin of the parameter's annotation to handle special cases like list[T] and Literal types
+        origin = get_origin(param.annotation)
+
         # Determine the default value
         default = param.default if not param.required else None
         # If the parameter has a Spec with an env attribute, attempt to resolve the value from the environment variables
         if param.spec and param.spec.env:
-            raw = resolve_env(param.spec.env)
-            if raw is not None:
-                default = parse_value(param, raw)
+            if origin is list:
+                # TODO: #45 Handle list[T] env resolution by splitting on commas or spaces and converting each value to the inner type
+                pass
+            else:
+                raw = resolve_env(param.spec.env)
+                if raw is not None:
+                    default = parse_value(param, raw)
 
         # Handle boolean parameters with a special action that creates both --flag and --no-flag options and sets the default value appropriately
         if param.annotation is bool:
             parser.add_argument(*names, action=argparse.BooleanOptionalAction, default=default, **kwargs)
             continue # Skip the rest of the loop since we've already handled this parameter
-
-        # Get the origin of the parameter's annotation to handle special cases like list[T] and Literal types
-        origin = get_origin(param.annotation)
 
         # Handle list[T] for multi-value arguments
         if origin is list:
