@@ -34,7 +34,7 @@ class MultiValueWidget(Widget[list]):
         if self._help:
             label += dim(f" ({self._help})")
         hint = dim(" (leave blank to finish)")
-        return f"{cyan("? ")}{label}{hint}"
+        return f"{cyan("? ")}{label}{hint} "
 
     
     def render_done(self) -> str:
@@ -50,7 +50,7 @@ class MultiValueWidget(Widget[list]):
         index = 1
 
         while True:
-            prompt_text = f"{cyan('? ')}{bold(f'{self._prompt} [{index}]')}{dim(' (leave blank to finish)')}"
+            prompt_text = f"{cyan('? ')}{bold(f'{self._prompt} [{index}]')}{dim(' (leave blank to finish)')} "
             raw = self._input_reader.read(prompt_text).strip()
             if not raw or raw == "":
                 break
