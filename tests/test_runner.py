@@ -666,3 +666,27 @@ def test_cmd_with_path_arg(tmp_path):
 
     result = read_file.run([str(file)])
     assert result == "hello"
+
+
+# LIST[T]
+# -------
+
+def test_cmd_list_required():
+    calls = []
+    
+    @cmd
+    def collect(items: list[int]):
+        calls.append(items)
+
+    collect.run(["1", "2", "3"])
+    assert calls == [[1, 2, 3]]
+
+def test_cmd_list_optional():
+    calls = []
+    
+    @cmd
+    def collect(items: list[int] = []):
+        calls.append(items)
+
+    collect.run(["--items", "4", "5"])
+    assert calls == [[4, 5]]
