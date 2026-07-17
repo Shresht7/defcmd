@@ -186,6 +186,38 @@ python deploy.py --env staging
 python deploy.py --env nope   # error: invalid choice
 ```
 
+### List arguments with `list[T]`
+
+A parameter annotated with `list[T]` accepts multiple values:
+
+```python
+def deploy(hosts: list[str]):
+    ...
+```
+
+Required list parameters (no default) become **positional arguments** that consume one or more values:
+
+```bash
+python deploy.py server1 server2 server3
+```
+
+Optional list parameters (with a default) become **`--flag` arguments** that consume zero or more values:
+
+```python
+def deploy(hosts: list[str] = ["localhost"]):
+    ...
+```
+
+```bash
+python deploy.py --hosts server1 server2
+python deploy.py                           # uses default: ["localhost"]
+```
+
+The inner type `T` determines per-element conversion: `list[int]`, `list[bool]`, `list[Literal["a", "b"]]`, and `list[Path]` all work as expected. Spec constraints like `min`, `max`, `pattern`, and `validate` are applied to each element individually.
+
+> [!CAUTION]
+> `Spec(env=...)` is not yet supported for `list[T]` parameters.
+
 ### Path arguments
 
 `pathlib.Path` annotations are supported natively. Paths are auto-expanded (`~`) and resolved to absolute paths:
