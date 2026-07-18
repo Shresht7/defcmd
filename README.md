@@ -218,6 +218,17 @@ The inner type `T` determines per-element conversion: `list[int]`, `list[bool]`,
 > [!CAUTION]
 > `Spec(env=...)` is not yet supported for `list[T]` parameters.
 
+### Reading from `STDIN`
+
+### Reading from stdin
+
+Mark a parameter with `Spec(stdin=True)` to accept piped input:
+
+```python
+@cmd
+def process(data: Annotated[str, Spec(stdin=True)]):
+    ...
+
 ### Path arguments
 
 `pathlib.Path` annotations are supported natively. Paths are auto-expanded (`~`) and resolved to absolute paths:
