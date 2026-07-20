@@ -1,26 +1,27 @@
 """
-Defines the Spec class, which represents the specification of a command, including its help text and other specifications.
+Describes how a command parameter should be presented, validated, and sourced.
 
-This module defines the `Spec` dataclass, which stores metadata describing how a command parameter should be presented and validated.
+This module defines the `Spec` dataclass, which stores metadata for a single function
+parameter in the command-line interface.
 
 A specification can provide:
-- help text for generated documentation
+- help text shown in `--help` output
 - a short option name (for example, `-f`)
-- prompt configuration for interactive input
-- secret input handling
+- prompt configuration for interactive input (custom message, skip, or force)
+- secret input handling (hidden input)
 - environment variable sourcing for default values
-- validation constraints such as minimum and maximum values,
-  regular expression patterns, and custom validation functions
+- validation constraints: minimum/maximum values, regex patterns, custom validators
+- path validation: existence checks, file/directory type, and resolution
+- stdin support for piped input
 
-`Spec` instances are attached to command parameters and are consumed by the command parser, help generator, and interactive prompting system.
-
-Path validation via `path_exists` and `path_type` is supported when the parameter is annotated as `pathlib.Path`.
+`Spec` instances are attached to parameters via `typing.Annotated` and consumed by the
+argparse builder, help generator, interactive wizard, and stdin injection logic.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Literal
+from typing import Any, Callable, Literal
 
 @dataclass(frozen=True)
 class Spec:
@@ -33,16 +34,16 @@ class Spec:
     secret: bool = False                                # Whether this parameter is a secret (e.g., a password) and should be hidden when prompting
     env: str | tuple[str, ...] | None = None            # The environment variable(s) to source this parameter from, if applicable
 
-    # Validation constraints
-    min: int | float | None = None                      # The minimum value for this parameter (if applicable)
-    max: int | float | None = None                      # The maximum value for this parameter (if applicable)
-    pattern: str | None = None                          # A regex pattern that the parameter value must match (if applicable)
-    validate: Callable | None = None                    # A custom validation function for this parameter (if applicable)
+    # Validation
+    min: int | float | None = None                      # Minimum value (numeric parameters)
+    max: int | float | None = None                      # Maximum value (numeric parameters)
+    pattern: str | None = None                          # Regex pattern the value must match
+    validate: Callable[[Any], bool] | None = None       # Custom validator: called with the parsed value, must return True
 
-    # Path validation
-    path_exists: bool | None = None                     # If set, raises an error if the path does not exist
-    path_type: Literal["file", "dir"] | None = None     # If set, raises an error if the path is not a file or directory
-    path_resolve: bool = True                           # If True, expand user and resolve to absolute path
+    # Path
+    path_exists: bool | None = None                     # Raise an error if the path does not exist
+    path_type: Literal["file", "dir"] | None = None     # Require the path to be a file or directory
+    path_resolve: bool = True                           # Expand ~ and resolve to an absolute path
 
     # Standard Input
     stdin: bool = False                                 # Whether the parameter can receive its value from stdin
