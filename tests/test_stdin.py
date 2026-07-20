@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import io
-import pytest
 from typing import Annotated
 
 from defcmd.runner import cmd
@@ -90,3 +89,27 @@ def test_stdin_cli_override_takes_priority(monkeypatch):
 
     greet.run(["from_cli"])
     assert calls == ["from_cli"]
+
+
+def test_stdin_bool_param(monkeypatch):
+    monkeypatch.setattr("sys.stdin", io.StringIO("true"))
+
+    calls = []
+    @cmd
+    def flag(value: Annotated[bool, Spec(stdin=True)]):
+        calls.append(value)
+
+    flag.run([])
+    assert calls == [True]
+
+
+def test_stdin_bool_param_no_value(monkeypatch):
+    monkeypatch.setattr("sys.stdin", io.StringIO("no"))
+
+    calls = []
+    @cmd
+    def flag(value: Annotated[bool, Spec(stdin=True)]):
+        calls.append(value)
+
+    flag.run([])
+    assert calls == [False]
