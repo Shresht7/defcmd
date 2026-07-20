@@ -24,10 +24,12 @@ from .convert import parse_value
 
 from typing import Callable, TypeAlias, get_args, get_origin, overload, Any, Unpack, TypedDict
 
+
 # CAUTION: argparse does not expose a public type for subparser collections
 ArgSubparsers: TypeAlias = argparse._SubParsersAction  # Type alias for subparsers in argparse
 
 Fn: TypeAlias = Callable[..., Any]  # Type alias for a callable function that takes any arguments and returns any value
+
 
 class CmdOptions(TypedDict, total=False):
     """Keyword arguments accepted by @cmd(), @cli.subcmd(), and CLI()."""
@@ -94,26 +96,10 @@ class Cmd:
 
         # If no arguments are provided, use the system command line arguments
         if argv is None:
-            argv = sys.argv[1:] # Skip the script name and use the rest of the args
+            argv = sys.argv[1:]  # Skip the script name and use the rest of the args
 
-        # Handle color flags in the arguments, allowing for --color and --no-color to override automatic detection
-        color_override = None
-        if self.add_color_flag:
-            filtered_args = []
-            for arg in argv:
-                if arg == "--color":
-                    color_override = True
-                elif arg == "--no-color":
-                    color_override = False
-                else:
-                    filtered_args.append(arg)
-            argv = filtered_args                # Update argv to exclude color flags
-        if color is not None:
-            set_ansi_enabled(color)
-        else:
-            auto_detect_color()
-            if color_override is not None:
-                set_ansi_enabled(color_override)
+        argv, color_override = _filter_color_flags(argv, self.add_color_flag)
+        _apply_color(color, color_override)
 
         # If no arguments are provided and we're in an interactive environment, run the interactive wizard
         if is_interactive(argv):
@@ -224,26 +210,10 @@ class CLI:
 
         # If no arguments are provided, use the system command line arguments
         if argv is None:
-            argv = sys.argv[1:]  # Skip the script name and use the rest of the args
+            argv = sys.argv[1:] # Skip the script name and use the rest of the args
 
-        # Handle color flags in the arguments, allowing for --color and --no-color to override automatic detection
-        color_override = None
-        if self.add_color_flag:
-            filtered_args = []
-            for arg in argv:
-                if arg == "--color":
-                    color_override = True
-                elif arg == "--no-color":
-                    color_override = False
-                else:
-                    filtered_args.append(arg)
-            argv = filtered_args                # Update argv to exclude color flags
-        if color is not None:
-            set_ansi_enabled(color)
-        else:
-            auto_detect_color()
-            if color_override is not None:
-                set_ansi_enabled(color_override)
+        argv, color_override = _filter_color_flags(argv, self.add_color_flag)
+        _apply_color(color, color_override)
 
         # If no arguments are provided and we're in an interactive environment, run the interactive wizard for the CLI
         if is_interactive(argv):
@@ -284,3 +254,37 @@ class CLI:
         inner = parser.add_subparsers(dest="__cmd", required=True)
         for subname, subcmd in self.commands.items():
             subcmd.attach_to_parser(inner, subname)
+
+
+# ----------------
+# HELPER FUNCTIONS
+# ----------------
+
+def _filter_color_flags(argv: list[str], add_color_flag: bool) -> tuple[list[str], bool | None]:
+    """Filter out --color and --no-color flags from the argument list and return the filtered list along with the override value"""
+
+    if not add_color_flag:
+        return argv, None
+
+    override = None
+    filtered = []
+    for arg in argv:
+        if arg == "--color":
+            override = True
+        elif arg == "--no-color":
+            override = False
+        else:
+            filtered.append(arg)
+
+    return filtered, override
+
+
+def _apply_color(color: bool | None, override: bool | None) -> None:
+    """Apply the color settings based on the provided color and override values"""
+    if color is not None:
+        set_ansi_enabled(color)
+    else:
+        auto_detect_color()
+        if override is not None:
+            set_ansi_enabled(override)
+
