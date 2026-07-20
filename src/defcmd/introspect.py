@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import inspect
 from dataclasses import dataclass
-from typing import Annotated, Any, get_args, get_origin
+from typing import Annotated, Any, get_args, get_origin, get_type_hints
 from collections.abc import Callable
 
 from .spec import Spec
@@ -40,6 +40,7 @@ def inspect_function_signature(fn: Callable[..., Any]) -> list[Parameter]:
     params = []
 
     signature = inspect.signature(fn)
+    resolved_hints = get_type_hints(fn, include_extras=True)
     for name, param in signature.parameters.items():
 
         # Check for unsupported parameter kinds (*args and **kwargs)
@@ -49,8 +50,8 @@ def inspect_function_signature(fn: Callable[..., Any]) -> list[Parameter]:
                 "which defcmd does not support yet."
             )
  
-        annotation = param.annotation   # the type annotation of the parameter, which may be an Annotated type containing specifications
-        spec = None                     # optional specifications extracted from the annotation, such as help text, if the annotation is an Annotated type with a Spec instance as extra specifications
+        annotation = resolved_hints.get(name, param.annotation) # the type annotation of the parameter, which may be an Annotated type containing specifications
+        spec = None # optional specifications extracted from the annotation, such as help text, if the annotation is an Annotated type with a Spec instance as extra specifications
 
         # If the annotation is an Annotated type, extract the actual type annotation and any Spec specifications from it
         if get_origin(annotation) is Annotated:

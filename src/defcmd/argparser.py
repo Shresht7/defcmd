@@ -111,6 +111,10 @@ def build_parser(
             else:
                 kwargs["nargs"] = "*"
 
+        # Make stdin marked params optional
+        if param.spec and param.spec.stdin:
+            kwargs['nargs'] = '*' if origin is list else '?'
+
 
         # For other types, use the type converter function to handle conversion and validation
         if not kwargs.get("type"):

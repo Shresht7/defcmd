@@ -43,3 +43,7 @@ class Spec:
     path_exists: bool | None = None                     # If set, raises an error if the path does not exist
     path_type: Literal["file", "dir"] | None = None     # If set, raises an error if the path is not a file or directory
     path_resolve: bool = True                           # If True, expand user and resolve to absolute path
+
+    # Standard Input
+    stdin: bool = False                                 # Whether the parameter can receive its value from stdin
+    delimiter: str = "\n"                               # Delimiter to split stdin content (for `list[T]` params with `stdin=True`)

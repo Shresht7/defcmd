@@ -16,12 +16,13 @@ import sys
 import argparse
 
 from .argparser import build_parser, build_argparse_epilog
-from .introspect import inspect_function_signature
+from .introspect import Parameter, inspect_function_signature
 from .interactive import is_interactive
 from .terminal import auto_detect_color, is_ansi_enabled, set_ansi_enabled
 from .widgets import prompt, SelectWidget
+from .convert import parse_value
 
-from typing import Callable, TypeAlias, overload, Any, Unpack, TypedDict
+from typing import Callable, TypeAlias, get_args, get_origin, overload, Any, Unpack, TypedDict
 
 # CAUTION: argparse does not expose a public type for subparser collections
 ArgSubparsers: TypeAlias = argparse._SubParsersAction  # Type alias for subparsers in argparse
@@ -127,6 +128,33 @@ class Cmd:
         if self.add_color_flag:
             parser.add_argument("--color", action=argparse.BooleanOptionalAction, help="Enable or disable ANSI color output")
         args = parser.parse_args(argv)
+
+        # Inject stdin for parameters marked with `Spec(stdin=True)`
+        for param in self.params:
+            if param.spec and param.spec.stdin and not sys.stdin.isatty():
+                raw_value = getattr(args, param.name)
+
+                # Value was provided by the command-line arguments, so no stdin injection needed
+                if get_origin(param.annotation) is list:
+                    if raw_value:  # non-empty list = provided on CLI
+                        continue
+                elif raw_value is not None:  # scalar with value
+                    continue
+
+                # Read, parse and conform stdin input to the corresponding parameter
+                stdin_content = sys.stdin.read()
+                if get_origin(param.annotation) is list:
+                    inner_type = get_args(param.annotation)[0] if get_args(param.annotation) else str
+                    synthetic = Parameter(name=param.name, annotation=inner_type, required=False, default=None, kind=param.kind, spec=param.spec)
+                    parts = stdin_content.split(param.spec.delimiter)
+                    # Filter out empty trailing parts from trailing delimiter
+                    if parts and parts[-1] == "":
+                        parts = parts[:-1]
+                    setattr(args, param.name, [parse_value(synthetic, p) for p in parts])
+                elif param.annotation is str:
+                    setattr(args, param.name, stdin_content)
+                else:
+                    setattr(args, param.name, parse_value(param, stdin_content.strip()))
 
         # Extract the parsed arguments and call the function with them
         kwargs = {param.name: getattr(args, param.name) for param in self.params}
