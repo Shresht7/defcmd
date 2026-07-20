@@ -38,8 +38,7 @@ class Spec:
     min: int | float | None = None                      # Minimum value (numeric parameters)
     max: int | float | None = None                      # Maximum value (numeric parameters)
     pattern: str | None = None                          # Regex pattern the value must match
-    validate: Callable[[Any], bool] | None = None       # Custom validator: called with the parsed value, must return True
-
+    validate: Callable[[Any], Any] | None = None        # Custom validator function to validate the value; raises ValidationError if invalid
     # Path
     path_exists: bool | None = None                     # Raise an error if the path does not exist
     path_type: Literal["file", "dir"] | None = None     # Require the path to be a file or directory
