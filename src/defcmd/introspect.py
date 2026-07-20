@@ -83,4 +83,21 @@ def inspect_function_signature(fn: Callable[..., Any]) -> list[Parameter]:
         )
 
     return params
-    
+
+
+# ----------------
+# HELPER FUNCTIONS
+# ----------------
+
+
+def _get_inner_type(param: Parameter) -> type:
+    """Get the inner type of a parameter, handling list[T] and other generic types"""
+    origin = get_origin(param.annotation)
+    if origin is list:
+        return get_args(param.annotation)[0] if get_args(param.annotation) else str
+    return param.annotation
+
+
+def _create_synthetic_parameter(param: Parameter, inner_type: type) -> Parameter:
+    """Create a synthetic Parameter object with the given inner type, preserving the original parameter's metadata"""
+    return Parameter(name=param.name, annotation=inner_type, required=False, default=None, kind=param.kind, spec=param.spec)
