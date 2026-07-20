@@ -16,7 +16,7 @@ import sys
 import argparse
 
 from .argparser import build_parser, build_argparse_epilog
-from .introspect import inspect_function_signature, _get_inner_type, _create_synthetic_parameter
+from .introspect import inspect_function_signature, get_inner_type, create_synthetic_parameter
 from .interactive import is_interactive
 from .terminal import auto_detect_color, is_ansi_enabled, set_ansi_enabled
 from .widgets import prompt, SelectWidget
@@ -144,8 +144,8 @@ class Cmd:
                 # Read, parse and conform stdin input to the corresponding parameter
                 stdin_content = sys.stdin.read()
                 if get_origin(param.annotation) is list:
-                    inner_type = _get_inner_type(param)
-                    synthetic = _create_synthetic_parameter(param, inner_type)
+                    inner_type = get_inner_type(param)
+                    synthetic = create_synthetic_parameter(param, inner_type)
                     parts = stdin_content.split(param.spec.delimiter)
                     # Filter out empty trailing parts from trailing delimiter
                     if parts and parts[-1] == "":
