@@ -12,6 +12,7 @@ Function signatures that cannot be represented as command-line interfaces,
 such as those containing `*args` or `**kwargs`, raise `UnsupportedSignatureError`.
 """
 
+
 from __future__ import annotations
 
 import inspect
@@ -21,9 +22,11 @@ from collections.abc import Callable
 
 from .spec import Spec
 
+
 class UnsupportedSignatureError(TypeError):
     """Raised when a function signature cannot be represented as a command-line interface"""
     pass
+
 
 @dataclass(frozen=True)
 class Parameter:
@@ -35,10 +38,13 @@ class Parameter:
     kind: inspect._ParameterKind    # kind of the parameter (positional, keyword, var-positional, var-keyword)
     spec: Spec | None = None        # optional specifications for the parameter, such as help text
 
+
+
 def inspect_function_signature(fn: Callable[..., Any]) -> list[Parameter]:
     """Extract parameters from a function signature and return a list of Parameter objects"""
     params = []
 
+    # Get the function signature and resolved type hints, including any `Annotated` metadata
     signature = inspect.signature(fn)
     resolved_hints = get_type_hints(fn, include_extras=True)
     for name, param in signature.parameters.items():
@@ -49,11 +55,12 @@ def inspect_function_signature(fn: Callable[..., Any]) -> list[Parameter]:
                 f"Parameter '{name}' in {fn.__name__}() is *args or **kwargs, "
                 "which defcmd does not support yet."
             )
- 
-        annotation = resolved_hints.get(name, param.annotation) # the type annotation of the parameter, which may be an Annotated type containing specifications
-        spec = None # optional specifications extracted from the annotation, such as help text, if the annotation is an Annotated type with a Spec instance as extra specifications
 
-        # If the annotation is an Annotated type, extract the actual type annotation and any Spec specifications from it
+        # Extract the type annotation and any Spec metadata from the parameter
+        annotation = resolved_hints.get(name, param.annotation)
+        spec = None
+
+        # If the annotation is an Annotated type, extract the actual type and any Spec from the metadata arguments
         if get_origin(annotation) is Annotated:
             args = get_args(annotation) 
             # Annotated[str, Spec(help="...")] --> args = (str, Spec(help="..."))
@@ -76,4 +83,21 @@ def inspect_function_signature(fn: Callable[..., Any]) -> list[Parameter]:
         )
 
     return params
-    
+
+
+# ----------------
+# HELPER FUNCTIONS
+# ----------------
+
+
+def get_inner_type(param: Parameter) -> type:
+    """Get the inner type of a parameter, handling list[T] and other generic types"""
+    origin = get_origin(param.annotation)
+    if origin is list:
+        return get_args(param.annotation)[0] if get_args(param.annotation) else str
+    return param.annotation
+
+
+def create_synthetic_parameter(param: Parameter, inner_type: type) -> Parameter:
+    """Create a synthetic Parameter object with the given inner type, preserving the original parameter's metadata"""
+    return Parameter(name=param.name, annotation=inner_type, required=False, default=None, kind=param.kind, spec=param.spec)

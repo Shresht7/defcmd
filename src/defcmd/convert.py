@@ -1,19 +1,15 @@
 from __future__ import annotations
 
 from pathlib import Path
-
-from .introspect import Parameter
-from .spec import Spec
-
 import re
 from typing import get_args, get_origin, Literal
+
+from .introspect import Parameter
+
 
 VALID_BOOL_TRUE = frozenset({"true", "yes", "y", "1", "on"})
 VALID_BOOL_FALSE = frozenset({"false", "no", "n", "0", "off"})
 
-class ValidationError(ValueError):
-    """Raised when a value fails validation against a Spec constraint"""
-    pass
 
 def parse_bool(raw: str) -> bool:
     """Parse a string into a boolean value, accepting various representations of true and false."""
@@ -25,6 +21,8 @@ def parse_bool(raw: str) -> bool:
         return False
     else:
         raise ValueError(f"please enter a valid boolean (true/false, yes/no, y/n, 1/0, on/off) value, got: {raw}")
+
+
 
 def convert_value(param: Parameter, raw: str):
     """Convert a raw string according to the parameter's type annotation"""
@@ -41,7 +39,8 @@ def convert_value(param: Parameter, raw: str):
 
     # Handle Path type
     if annotation is Path:
-        p = Path(raw)
+        p = Path(raw)   # Parse the raw string into a Path object
+        # Expand ~ and resolve to an absolute path by default
         if param.spec is None or param.spec.path_resolve:
             p = p.expanduser().resolve()
         return p
@@ -51,6 +50,8 @@ def convert_value(param: Parameter, raw: str):
         return annotation(raw)
     
     return raw  # Default case: return the raw string if no conversion is needed
+
+
 
 def validate_value(param: Parameter, value):
     """Check Spec constraints against the convert value and raise ValidationError if any constraint is violated"""
@@ -94,14 +95,18 @@ def validate_value(param: Parameter, value):
             if spec.path_type == "dir" and not value.is_dir():
                 raise ValidationError(f"path '{value}' is not a directory")
 
+
+
 def parse_value(param: Parameter, raw: str):
     """Convert and validate a raw string value according to the parameter's type annotation and Spec constraints"""
     
+    # Convert the raw string into the appropriate type based on the parameter's annotation
     try:
         value = convert_value(param, raw)
     except ValueError as e:
         raise ValidationError(str(e))
 
+    # Validate the converted value against any Spec constraints
     validate_value(param, value)
 
     # Literal choices check
@@ -115,3 +120,8 @@ def parse_value(param: Parameter, raw: str):
             raise ValidationError(f"invalid choice: {value}. (choose from {', '.join(map(str, choices))})")
 
     return value
+
+
+class ValidationError(ValueError):
+    """Raised when a value fails validation against a Spec constraint"""
+    pass

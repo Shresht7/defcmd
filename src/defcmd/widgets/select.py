@@ -25,7 +25,7 @@ class SelectWidget(Widget[str]):
         self._help = help
         self._options = options
         self._default = default
-        self._input_reader = DefaultInputReader() if input_reader is None else input_reader
+        self._input_reader = input_reader or DefaultInputReader()
         self._value: str | None = None
         self._selection_marker = selection_marker
         self._interacted: bool = False
@@ -41,16 +41,16 @@ class SelectWidget(Widget[str]):
         """Render the widget as a string for display in the terminal"""
         label = bold(self._prompt) if self._prompt else ""
         if self._help:
-            help = dim(f" ({self._help})")
-            label += f"{help}"
+            help_text = dim(f" ({self._help})")
+            label += f"{help_text}"
         return f"{self._prompt_prefix}{label}{self._prompt_suffix}"
     
     def render_done(self) -> str:
         """Render the final state of the widget after user interaction"""
         label = bold(self._prompt)
         if self._help:
-            help = dim(f" ({self._help})")
-            label += f"{help}"
+            help_text = dim(f" ({self._help})")
+            label += f"{help_text}"
         checkmark = green("✓")
         return f"{checkmark} {label}{self._prompt_suffix}{self._value}"
 
