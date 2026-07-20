@@ -60,7 +60,23 @@ def auto_detect_color() -> None:
     # If stdout is not a terminal (e.g., output is being piped to a file), disable ANSI color output
     elif not sys.stdout.isatty():
         set_ansi_enabled(False)
-    
+
+
+def strip_ansi(text: str) -> str:
+    """Remove ANSI escape sequences from a string using a while-loop parser."""
+    result: list[str] = []
+    i = 0
+    while i < len(text):
+        if text[i] == "\x1b" and i + 1 < len(text) and text[i + 1] == "[":
+            i += 2
+            while i < len(text) and text[i] != "m":
+                i += 1
+            i += 1
+        else:
+            result.append(text[i])
+            i += 1
+    return "".join(result)
+
 
 # ---------
 # ANSI CODE
@@ -323,6 +339,7 @@ __all__ = [
     "is_ansi_enabled",
     "set_ansi_enabled",
     "auto_detect_color",
+    "strip_ansi",
 
     "ANSICode",
     "ANSIColorCode",

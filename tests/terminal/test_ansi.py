@@ -317,3 +317,38 @@ class TestAnsiDisabled:
     def test_cursor_unaffected(self):
         assert Cursor.up() == "\x1b[1A"
         assert Cursor.clear_line() == "\x1b[2K"
+
+
+class TestStripAnsi:
+    def test_plain_text_unchanged(self):
+        assert strip_ansi("hello world") == "hello world"
+
+    def test_single_ansi_code_stripped(self):
+        assert strip_ansi("\x1b[31m") == ""
+
+    def test_text_with_ansi_prefix(self):
+        assert strip_ansi("\x1b[31mHello") == "Hello"
+
+    def test_text_with_ansi_surround(self):
+        assert strip_ansi("\x1b[1mHello\x1b[0m") == "Hello"
+
+    def test_text_with_ansi_between(self):
+        assert strip_ansi("a\x1b[31mb\x1b[0mc") == "abc"
+
+    def test_multiple_codes(self):
+        assert strip_ansi("\x1b[1m\x1b[31m\x1b[4mtext") == "text"
+
+    def test_rgb_ansi_stripped(self):
+        assert strip_ansi("\x1b[38;2;255;0;0mRed") == "Red"
+
+    def test_bare_escape_not_csi(self):
+        assert strip_ansi("\x1bHello") == "\x1bHello"
+
+    def test_empty_string(self):
+        assert strip_ansi("") == ""
+
+    def test_only_ansi_returns_empty(self):
+        assert strip_ansi("\x1b[1m\x1b[31m") == ""
+
+    def test_cursor_sequences_stripped(self):
+        assert strip_ansi("\x1b[2J\x1b[H") == ""
