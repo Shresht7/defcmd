@@ -113,3 +113,15 @@ def test_stdin_bool_param_no_value(monkeypatch):
 
     flag.run([])
     assert calls == [False]
+
+
+def test_stdin_multiple_params(monkeypatch):
+    monkeypatch.setattr("sys.stdin", io.StringIO("from_stdin"))
+
+    calls = []
+    @cmd
+    def process(data: Annotated[str, Spec(stdin=True)], items: Annotated[list[str], Spec(stdin=True)] = []):
+        calls.append((data, items))
+
+    process.run(["from_cli"])
+    assert calls == [("from_cli", ["from_stdin"])]
