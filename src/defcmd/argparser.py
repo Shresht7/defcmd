@@ -61,10 +61,8 @@ def build_parser(
 
     for param in params:
 
-        names = []
-        if param.spec and param.spec.short:
-            names.append(f"-{param.spec.short}")
-        names.append(f"--{param.name}")
+        # Build the list of argument names for the parameter, including short and long flags if specified in the Spec
+        names = _build_param_names(param)
 
         # Setup the common kwargs for both required and optional parameters
         kwargs = {}
@@ -138,17 +136,15 @@ def build_parser(
 # HELPER FUNCTIONS
 # ----------------
 
-def _make_type_converter(param: Parameter) -> Callable[[str], object]:
-    """
-    Create a type converter function for a given parameter that will be used by argparse to convert
-    the raw string input into the expected type and validate it against any Spec constraints
-    """
-    def type_fn(raw: str):
-        try:
-            return parse_value(param, raw)
-        except ValidationError as e:
-            raise argparse.ArgumentTypeError(str(e)) from e
-    return type_fn
+
+def _build_param_names(param: Parameter) -> list[str]:
+    """Build the list of argument names for a given parameter, including short and long flags if specified in the Spec"""
+    names = []
+    if param.spec and param.spec.short:
+        names.append(f"-{param.spec.short}")
+    names.append(f"--{param.name}")
+    return names
+
 
 
 def resolve_env(env: str | tuple[str, ...]) -> str | None:
