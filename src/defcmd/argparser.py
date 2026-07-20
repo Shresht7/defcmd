@@ -141,20 +141,20 @@ def _resolve_default(param: Parameter, origin: type | None) -> Any:
         if origin is list:
             inner_type = get_inner_type(param)
             synthetic = create_synthetic_parameter(param, inner_type)
-            raw = resolve_env(param.spec.env)
+            raw = _resolve_env(param.spec.env)
             if raw is not None:
                 default = [parse_value(synthetic, part) for part in raw.split()]
 
         # Otherwise, parse the environment variable value into the expected type for the parameter
         else:
-            raw = resolve_env(param.spec.env)
+            raw = _resolve_env(param.spec.env)
             if raw is not None:
                 default = parse_value(param, raw)
 
     return default
 
 
-def resolve_env(env: str | tuple[str, ...]) -> str | None:
+def _resolve_env(env: str | tuple[str, ...]) -> str | None:
     """
     Resolve the value of an environment variable or a tuple of environment variables.
     If a tuple is provided, the first one that is set will be returned.
