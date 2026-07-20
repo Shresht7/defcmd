@@ -22,7 +22,7 @@ from .terminal import auto_detect_color, is_ansi_enabled, set_ansi_enabled
 from .widgets import prompt, SelectWidget
 from .convert import parse_value
 
-from typing import Callable, TypeAlias, get_args, get_origin, overload, Any, Unpack, TypedDict
+from typing import Callable, TypeAlias, get_origin, overload, Any, Unpack, TypedDict
 
 
 # CAUTION: argparse does not expose a public type for subparser collections
@@ -91,7 +91,7 @@ class Cmd:
         return self.fn(*args, **kwargs)
 
 
-    def run(self, argv=None, *, color: bool | None = None):
+    def run(self, argv: list[str] | None = None, *, color: bool | None = None):
         """Run the command with the provided arguments or prompt interactively if no arguments are given"""
 
         # If no arguments are provided, use the system command line arguments
