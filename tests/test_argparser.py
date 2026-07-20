@@ -1,16 +1,10 @@
 import pytest
-import re
 from typing import Annotated, Literal
 
 from defcmd.introspect import inspect_function_signature
 from defcmd.argparser import build_parser, build_argparse_epilog, generate_examples_block
 from defcmd.spec import Spec
-
-
-_ansi_re = re.compile(r"\x1b\[[0-9;]*m")
-
-def strip_ansi(text: str) -> str:
-    return _ansi_re.sub("", text)
+from defcmd.terminal import strip_ansi
 
 
 class TestBasicParsing:

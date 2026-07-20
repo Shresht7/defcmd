@@ -1,13 +1,7 @@
 import pytest
-import re
 
 from defcmd.runner import cmd, CLI
-
-
-_ansi_re = re.compile(r"\x1b\[[0-9;]*m")
-
-def strip_ansi(text: str) -> str:
-    return _ansi_re.sub("", text)
+from defcmd.terminal import strip_ansi
 
 
 class TestCmdExamples:
