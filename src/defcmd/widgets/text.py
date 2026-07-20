@@ -30,7 +30,7 @@ class TextInputWidget(Widget[str]):
         self._secret = secret
         self._secret_char = secret_char
         self._converter = converter
-        self._input_reader = DefaultInputReader() if input_reader is None else input_reader
+        self._input_reader = input_reader or DefaultInputReader()
         self._value: Any = default
         self._interacted: bool = False
 
@@ -38,8 +38,8 @@ class TextInputWidget(Widget[str]):
         """Render the widget as a string for display in the terminal"""
         label = bold(self._prompt) if self._prompt else ""
         if self._help:
-            help = dim(f" ({self._help})")
-            label += f"{help}"
+            help_text = dim(f" ({self._help})")
+            label += f"{help_text}"
         if self._default is not None:
             default = dim(f"[default: {str(self._default)}]")
             label += f" {default}"
@@ -49,8 +49,8 @@ class TextInputWidget(Widget[str]):
         """Render the final state of the widget after user interaction"""
         label = bold(self._prompt) if self._prompt else ""
         if self._help:
-            help = dim(f" ({self._help})")
-            label += f"{help}"
+            help_text = dim(f" ({self._help})")
+            label += f"{help_text}"
         value = str(self._value) if self._value is not None else ""
         if self._secret:
             value = self._secret_char * len(value)

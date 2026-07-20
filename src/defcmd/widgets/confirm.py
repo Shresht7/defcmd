@@ -30,9 +30,9 @@ class ConfirmWidget(Widget[bool]):
     def render(self) -> str:
         """Render the widget as a string for display in the terminal"""
         label = bold(self._prompt) if self._prompt else ""
-        help = dim(f" ({self._help})") if self._help else ""
+        help_text = dim(f" ({self._help})") if self._help else ""
         default = self._get_default_hint()
-        return f"{self._prompt_prefix}{label}{help} {default}{self._prompt_suffix}"
+        return f"{self._prompt_prefix}{label}{help_text} {default}{self._prompt_suffix}"
 
     def _get_default_hint(self) -> str:
         res = ""
@@ -47,12 +47,12 @@ class ConfirmWidget(Widget[bool]):
     def render_done(self) -> str:
         """Render the final state of the widget after user interaction"""
         label = bold(self._prompt) if self._prompt else ""
-        help = dim(f" ({self._help})") if self._help else ""
+        help_text = dim(f" ({self._help})") if self._help else ""
         value = ""
         if self._value is not UNSET:
             value = green("y") if self._value else red("n")
         checkmark = green("✓")
-        return f"{checkmark} {label}{help}{self._prompt_suffix}{value}"
+        return f"{checkmark} {label}{help_text}{self._prompt_suffix}{value}"
 
 
     def prompt(self) -> bool:
