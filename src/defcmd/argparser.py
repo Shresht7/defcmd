@@ -18,7 +18,7 @@ from .introspect import Parameter
 from .convert import ValidationError, parse_value
 from .terminal import dim, cyan
 
-from typing import get_origin, get_args, Literal
+from typing import Any, get_origin, get_args, Literal
 from collections.abc import Callable
 
 # REFACTOR: build_parser into a dispatch pattern. Handle list[T], bool, Literal,and regular types in dedicated functions rather than inline conditionals.
@@ -75,19 +75,7 @@ def build_parser(
         origin = get_origin(param.annotation)
 
         # Determine the default value
-        default = param.default if not param.required else None
-        # If the parameter has a Spec with an env attribute, attempt to resolve the value from the environment variables
-        if param.spec and param.spec.env:
-            if origin is list:
-                inner_type = get_args(param.annotation)[0] if get_args(param.annotation) else str
-                synthetic = Parameter(name=param.name, annotation=inner_type, required=False, default=None, kind=param.kind, spec=param.spec)
-                raw = resolve_env(param.spec.env)
-                if raw is not None:
-                    default = [parse_value(synthetic, part) for part in raw.split()]
-            else:
-                raw = resolve_env(param.spec.env)
-                if raw is not None:
-                    default = parse_value(param, raw)
+        default = _resolve_default(param, origin)
 
         # Handle boolean parameters with a special action that creates both --flag and --no-flag options and sets the default value appropriately
         if param.annotation is bool:
@@ -98,9 +86,8 @@ def build_parser(
         if origin is list:
 
             # Create a synthetic parameter with the inner type of the list to use for type conversion and validation
-            annotation_args = get_args(param.annotation)
-            inner_type = annotation_args[0] if annotation_args else str
-            synthetic_param = Parameter(name=param.name, annotation=inner_type, required=False, default=None, kind=param.kind, spec=param.spec)
+            inner_type = _get_inner_type(param)
+            synthetic_param = _create_synthetic_parameter(param, inner_type)
             kwargs["type"] = _make_type_converter(synthetic_param)
 
             # Set nargs to "+" if the parameter is required and has no default, otherwise set it to "*"
@@ -146,6 +133,36 @@ def _build_param_names(param: Parameter) -> list[str]:
     return names
 
 
+def _get_inner_type(param: Parameter) -> type:
+    """Get the inner type of a parameter, handling list[T] and other generic types"""
+    origin = get_origin(param.annotation)
+    if origin is list:
+        return get_args(param.annotation)[0] if get_args(param.annotation) else str
+    return param.annotation
+
+
+def _create_synthetic_parameter(param: Parameter, inner_type: type) -> Parameter:
+    """Create a synthetic Parameter object with the given inner type, preserving the original parameter's metadata"""
+    return Parameter(name=param.name, annotation=inner_type, required=False, default=None, kind=param.kind, spec=param.spec)
+
+
+def _resolve_default(param: Parameter, origin: type | None) -> Any:
+    """Resolve the default value for a parameter, checking for environment variable overrides if specified in the Spec"""
+    default = param.default if not param.required else None
+    # If the parameter has a Spec with an env attribute, attempt to resolve the value from the environment variables
+    if param.spec and param.spec.env:
+        if origin is list:
+            inner_type = _get_inner_type(param)
+            synthetic = _create_synthetic_parameter(param, inner_type)
+            raw = resolve_env(param.spec.env)
+            if raw is not None:
+                default = [parse_value(synthetic, part) for part in raw.split()]
+        else:
+            raw = resolve_env(param.spec.env)
+            if raw is not None:
+                default = parse_value(param, raw)
+    return default
+
 
 def resolve_env(env: str | tuple[str, ...]) -> str | None:
     """
@@ -162,6 +179,20 @@ def resolve_env(env: str | tuple[str, ...]) -> str | None:
             return value
     
     return None
+
+
+def _make_type_converter(param: Parameter) -> Callable[[str], object]:
+    """
+    Create a type converter function for a given parameter that will be used by argparse to convert
+    the raw string input into the expected type and validate it against any Spec constraints
+    """
+    def type_fn(raw: str):
+        try:
+            return parse_value(param, raw)
+        except ValidationError as e:
+            raise argparse.ArgumentTypeError(str(e)) from e
+    return type_fn
+
 
 def generate_examples_block(examples: dict[str, str] | None, show_header: bool = True) -> str | None:
     """Generate a formatted examples block for the command's help text"""
@@ -184,6 +215,7 @@ def build_argparse_epilog(epilog: str | None, examples: dict[str, str] | None) -
     if examples_block:
         return examples_block
     return epilog
+
 
 class _ExamplesAction(argparse.Action):
     """Custom argparse action to print the examples and exit"""
